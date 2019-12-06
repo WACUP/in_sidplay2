@@ -13,6 +13,8 @@ void ConfigDlgInitDialog(HWND hWnd)
 	int val, val1;
 	char buf[20];
 
+	createsidplayer();
+
 	playerConfig = new PlayerConfig;
 	//PlayerConfig cfg;
 	//initialize config with current values
@@ -102,24 +104,6 @@ void ConfigDlgInitDialog(HWND hWnd)
 	//second sid model (pseudo stereo)
 	SendDlgItemMessage(hWnd, IDC_SID2MODEL, CB_SETCURSEL, (WPARAM)playerConfig->sid2Model, 0);
 
-	if (playerConfig->playlistFormat != NULL)
-	{
-		SetDlgItemTextA(hWnd, IDC_PLAYLIST_FORMAT, playerConfig->playlistFormat);
-	}
-	else
-	{
-		SetDlgItemTextA(hWnd, IDC_PLAYLIST_FORMAT, "%t %x / %a / %r / %sn");
-	}
-
-	if (playerConfig->subsongFormat != NULL)
-	{
-		SetDlgItemTextA(hWnd, IDC_SUBSONG_FORMAT, playerConfig->subsongFormat);
-	}
-	else
-	{
-		SetDlgItemTextA(hWnd, IDC_SUBSONG_FORMAT, "(Tune %n)");
-	}
-
 	/*
 	CheckDlgButton(hWnd, IDC_VOICE00, playerConfig->voiceConfig[0][0] ? BST_UNCHECKED : BST_CHECKED);
 	CheckDlgButton(hWnd, IDC_VOICE01, playerConfig->voiceConfig[0][1] ? BST_UNCHECKED : BST_CHECKED);
@@ -145,9 +129,7 @@ void ConfigDlgInitDialog(HWND hWnd)
 
 void UpdateConfig(HWND hWnd)
 {
-	const int MAX_BUFFER_SIZE = 100;
 	int val,val1;
-	char buf[MAX_BUFFER_SIZE];
 
 	val = SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_GETCURSEL,0,0);
 	switch(val)
@@ -198,6 +180,8 @@ void UpdateConfig(HWND hWnd)
 	
 	if(IsDlgButtonChecked(hWnd,IDC_PLAYLIMIT_CHK) == BST_CHECKED)
 	{
+		const int MAX_BUFFER_SIZE = 100;
+		char buf[MAX_BUFFER_SIZE] = {0};
 		GetDlgItemTextA(hWnd,IDC_PLAYLIMITTIME,buf,20);
 		playerConfig->playLimitEnabled = true;
 		playerConfig->playLimitSec = atoi(buf);
@@ -231,29 +215,6 @@ void UpdateConfig(HWND hWnd)
 	//SID model
 	val = SendDlgItemMessage(hWnd, IDC_SID2MODEL, CB_GETCURSEL, 0, 0);
 	playerConfig->sid2Model = (SidConfig::sid_model_t) val;
-
-	//playlist format
-	GetDlgItemTextA(hWnd, IDC_PLAYLIST_FORMAT, buf, MAX_BUFFER_SIZE);
-	if (strlen(buf) == 0)
-	{
-		playerConfig->playlistFormat = "";
-	}
-	else
-	{
-		playerConfig->playlistFormat = new char[strlen(buf) + 1];
-		strcpy(playerConfig->playlistFormat, buf);
-	}
-	//subsong format
-	GetDlgItemTextA(hWnd, IDC_SUBSONG_FORMAT, buf, MAX_BUFFER_SIZE);
-	if (strlen(buf) == 0)
-	{
-		playerConfig->subsongFormat = "";
-	}
-	else
-	{
-		playerConfig->subsongFormat = new char[strlen(buf) + 1];
-		strcpy(playerConfig->subsongFormat, buf);
-	}
 }
 
 void SelectHvscFile(HWND hWnd)
@@ -274,8 +235,6 @@ void SelectHvscFile(HWND hWnd)
 
 void SelectHvscDirectory(HWND hWnd)
 {
-	wchar_t path[MAX_PATH];
-	size_t pathLen;
 	LPITEMIDLIST idlRoot = NULL;
 
     BROWSEINFO bi = { 0 };
@@ -286,6 +245,7 @@ void SelectHvscDirectory(HWND hWnd)
     if ( pidl != 0 )
     {
         // get the name of the folder and put it in path
+		wchar_t path[MAX_PATH] = {0};
         SHGetPathFromIDList ( pidl, path );
         IMalloc * imalloc = 0;
         if ( SUCCEEDED( SHGetMalloc ( &imalloc )) )
@@ -295,7 +255,7 @@ void SelectHvscDirectory(HWND hWnd)
         }
     
 		if(playerConfig->hvscDirectory != NULL) delete[] playerConfig->hvscDirectory;
-		pathLen = wcslen(path)+1;
+		size_t pathLen = wcslen(path)+1;
 		playerConfig->hvscDirectory = new char[pathLen];
 		wcstombs(playerConfig->hvscDirectory,path,pathLen);
 		SetDlgItemTextA(hWnd,IDC_HVSCDIR,playerConfig->hvscDirectory);

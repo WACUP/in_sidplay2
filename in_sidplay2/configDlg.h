@@ -18,3 +18,5 @@ void SelectHvscFile(HWND hWnd);
 
 //! Procedure handling selection of HVSC directory
 void SelectHvscDirectory(HWND hWnd);
+
+void createsidplayer();

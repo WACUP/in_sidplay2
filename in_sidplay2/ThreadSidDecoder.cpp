@@ -1,15 +1,14 @@
 #include <windows.h>
 #include <shlwapi.h>
-#include "ThreadSidPlayer.h"
+#include "ThreadSidDecoder.h"
 #include "SidInfoImpl.h"
 #include "c64roms.h"
 #include <loader/loader/paths.h>
 
-CThreadSidPlayer::CThreadSidPlayer(In_Module& inWAmod): m_tune(0), m_threadHandle(0)
+CThreadSidDecoder::CThreadSidDecoder(void): m_tune(0), m_threadHandle(0)
 {
-	m_inmod = &inWAmod;
 	m_decodeBuf = NULL;
-	m_decodeBufLen =0;
+	m_decodeBufLen = 0;
 	m_playerStatus = SP_STOPPED;
 	m_playerConfig.playLimitEnabled = false;
 	m_playerConfig.playLimitSec = 120;
@@ -30,15 +29,14 @@ CThreadSidPlayer::CThreadSidPlayer(In_Module& inWAmod): m_tune(0), m_threadHandl
 	m_playerConfig.pseudoStereo = false;
 	m_playerConfig.sid2Model = SidConfig::sid_model_t::MOS6581;	
 	m_currentTuneLength = -1;
-	maxLantency =0;
 	m_seekNeedMs = 0;
 	m_engine = new sidplayfp;
 }
 
-CThreadSidPlayer::~CThreadSidPlayer(void)
+CThreadSidDecoder::~CThreadSidDecoder(void)
 {
 	if(m_decodeBufLen > 0) delete[] m_decodeBuf;
-	ClearSTILData();
+
 	if (m_engine != NULL)
 	{
 		if (m_playerConfig.sidConfig.sidEmulation != NULL)
@@ -52,7 +50,7 @@ CThreadSidPlayer::~CThreadSidPlayer(void)
 //	m_sidDatabase.close();
 }
 
-void CThreadSidPlayer::Init(void)
+void CThreadSidDecoder::Init(void)
 { 
 	if(m_playerStatus != SP_STOPPED) Stop();
 
@@ -75,46 +73,28 @@ void CThreadSidPlayer::Init(void)
 	SetConfig(&m_playerConfig);
 }
 
-void CThreadSidPlayer::Play(void)
+void CThreadSidDecoder::Play(void)
 {
-
 	if(m_playerStatus == SP_RUNNING) return;
 	if(m_playerStatus == SP_PAUSED) 
 	{
 		m_playerStatus = SP_RUNNING;
-		m_inmod->outMod->Pause(0);
 		ResumeThread(m_threadHandle);
 		return;	
 	}
 	//if stopped then create new thread to play
 	if(m_playerStatus == SP_STOPPED)
 	{
-		int numChann = (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1;
-		maxLantency = m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,numChann, PLAYBACK_BIT_PRECISION,-1,-1);
+		/*int numChann = (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1;
+		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann)/1000, m_playerConfig.sidConfig.frequency /1000,numChann,1);*/
 
-		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann)/1000, m_playerConfig.sidConfig.frequency /1000,numChann,1);
-		//visualization init
-		m_inmod->SAVSAInit(maxLantency,m_playerConfig.sidConfig.frequency);
-		m_inmod->VSASetInfo(m_playerConfig.sidConfig.frequency,numChann);
-		//default volume
-		m_inmod->outMod->SetVolume(-666); 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)CThreadSidPlayer::Run,this,0,NULL);
+		m_threadHandle = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)CThreadSidDecoder::Run,this,0,NULL);
 		// TODO api_config & thread priority level
 	}
 }
 
-void CThreadSidPlayer::Pause(void)
-{
-	if(m_playerStatus == SP_RUNNING)
-	{
-		SuspendThread(m_threadHandle);
-		m_inmod->outMod->Pause(1);
-		m_playerStatus = SP_PAUSED;
-	}
-}
-
-void CThreadSidPlayer::Stop(void)
+void CThreadSidDecoder::Stop(void)
 {
 	if(m_playerStatus == SP_STOPPED) return;
 	m_playerStatus = SP_STOPPED; //to powinno zatrzymaæ w¹tek
@@ -124,14 +104,9 @@ void CThreadSidPlayer::Stop(void)
 	}
 	m_engine->stop();
 	CloseHandle(m_threadHandle);
-	// close output system
-
-	if(m_inmod->outMod != NULL) m_inmod->outMod->Close();	
-	// deinitialize visualization
-	m_inmod->SAVSADeInit();
 }
 
-void CThreadSidPlayer::LoadTune(const char* name)
+void CThreadSidDecoder::LoadTune(const char* name)
 {
 	Stop();
 
@@ -159,15 +134,16 @@ void CThreadSidPlayer::LoadTune(const char* name)
 	}
 }
 
-DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
+DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 {
+#if 0
 	int desiredLen;
 	int decodedLen;
 	int numChn;
 	int bps;
 	int dspDataLen = 0;
 	int freq;
-	CThreadSidPlayer *playerObj = static_cast<CThreadSidPlayer*>(thisparam);
+	CThreadSidDecoder *playerObj = static_cast<CThreadSidDecoder*>(thisparam);
 
 	playerObj->m_decodedSampleCount = 0;
 	playerObj->m_playTimems = 0;
@@ -237,18 +213,18 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 			}
 		//no song length, and no length limit so play for infinity
 	}
-	
+#endif
 	return 0;
 }
 
-int CThreadSidPlayer::CurrentSubtune(void)
+int CThreadSidDecoder::CurrentSubtune(void)
 {
 	if(m_tune.getStatus()) 
 		return m_tune.getInfo()->currentSong();
 	return 0;
 }
 
-void CThreadSidPlayer::PlaySubtune(int subTune)
+void CThreadSidDecoder::PlaySubtune(int subTune)
 {	
 	Stop();
 	m_tune.selectSong(subTune);	
@@ -262,18 +238,7 @@ void CThreadSidPlayer::PlaySubtune(int subTune)
 	Play();
 }
 
-const SidTuneInfo* CThreadSidPlayer::GetTuneInfo(void)
-{
-	return (m_tune.getStatus()) ? m_tune.getInfo() : NULL; //SidTuneInfo();
-}
-
-int CThreadSidPlayer::GetPlayTime(void)
-{
-	return m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()); 
-	//return ((m_timer->time()*1000)/m_timer->timebase()) + (m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()); 
-}
-
-bool CThreadSidPlayer::LoadConfigFromFile(PlayerConfig *conf)
+bool CThreadSidDecoder::LoadConfigFromFile(PlayerConfig *conf)
 {
 	if(conf == NULL) return false;
 
@@ -318,7 +283,7 @@ bool CThreadSidPlayer::LoadConfigFromFile(PlayerConfig *conf)
 	return true;
 }
 
-void CThreadSidPlayer::ReadLine(char* buf,FILE *file,const int maxBuf)
+void CThreadSidDecoder::ReadLine(char* buf,FILE *file,const int maxBuf)
 {
 	char c;
 	int pos =0;
@@ -334,53 +299,7 @@ void CThreadSidPlayer::ReadLine(char* buf,FILE *file,const int maxBuf)
 	buf[pos]='\0';
 }
 
-void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
-{
-	if(plconf == NULL) return;
-
-	static wchar_t fileName[MAX_PATH];
-	if (fileName[0])
-	{
-		// use the settings path so we can have a portable wacup install no matter what :)
-		PathCombine(fileName, GetPaths()->settings_dir, L"Plugins\\in_sidplay2.ini");
-}
-
-	SidConfig* conf = &plconf->sidConfig;
-	ofstream outFile(fileName);
-	outFile << "PlayFrequency=" << conf->frequency << endl;
-	outFile << "PlayChannels=" << ((conf->playback == SidConfig::MONO) ? 1 : 2) << endl;
-	outFile << "C64Model=" << conf->defaultC64Model << endl;
-	outFile << "C64ModelForced=" << conf->forceC64Model << endl;
-	outFile << "SidModel=" << conf->defaultSidModel << endl;
-	outFile << "SidModelForced=" << conf->forceSidModel << endl;
-	outFile << "Sid2ModelForced=" << conf->forceSecondSidModel << endl;
-	
-	outFile<<"PlayLimitEnabled="<<plconf->playLimitEnabled<<endl;
-	outFile<<"PlayLimitTime="<<plconf->playLimitSec<<endl;
-	outFile<<"UseSongLengthFile="<<plconf->useSongLengthFile<<endl;
-	if((!plconf->useSongLengthFile)||(plconf->songLengthsFile == NULL)) outFile<<"SongLengthsFile="<<""<<endl;
-	else outFile<<"SongLengthsFile="<<plconf->songLengthsFile<<endl;
-	outFile<<"UseSTILFile="<<plconf->useSTILfile<<endl;
-	if(plconf->hvscDirectory == NULL) plconf->useSTILfile = false;
-	if(!plconf->useSTILfile) outFile<<"HVSCDir="<<""<<endl;
-	else outFile<<"HVSCDir="<<plconf->hvscDirectory<<endl;
-	outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
-
-	outFile << "VoiceConfig=";
-	for (int sid = 0; sid < 3; ++sid)
-	{
-		for (int voice = 0; voice < 3; ++voice)
-		{
-			outFile << plconf->voiceConfig[sid][voice];
-		}
-	}
-	outFile << endl;
-	outFile << "PseudoStereo=" << plconf->pseudoStereo << endl;
-	outFile << "Sid2Model=" << plconf->sid2Model << endl;
-	outFile.close();
-}
-
-void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, string value)
+void CThreadSidDecoder::AssignConfigValue(PlayerConfig* plconf,string token, string value)
 {
 	SidConfig* conf = &plconf->sidConfig;
 	if(token.compare("PlayFrequency") == 0) { conf->frequency = atoi(value.c_str()); return; }
@@ -487,31 +406,7 @@ void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, stri
 	}
 }
 
-const PlayerConfig& CThreadSidPlayer::GetCurrentConfig()
-{
-	return m_playerConfig;
-	/*
-	PlayerConfig cfgcpy;
-	memcpy(&cfgcpy,&m_playerConfig,sizeof(PlayerConfig));
-	cfgcpy.sidConfig.sidEmulation = NULL;
-	if(m_playerConfig.songLengthsFile != NULL)
-	{
-		cfgcpy.songLengthsFile = new char[strlen(m_playerConfig.songLengthsFile)+1];
-		strcpy(cfgcpy.songLengthsFile,m_playerConfig.songLengthsFile);
-	}
-	else cfgcpy.songLengthsFile = NULL;
-	if(m_playerConfig.hvscDirectory != NULL)
-	{
-		cfgcpy.hvscDirectory = new char[strlen(m_playerConfig.hvscDirectory)+1];
-		strcpy(cfgcpy.hvscDirectory,m_playerConfig.hvscDirectory);
-	}
-	else cfgcpy.hvscDirectory = NULL;
-
-	return cfgcpy;
-	*/
-}
-
-void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
+void CThreadSidDecoder::SetConfig(PlayerConfig* newConfig)
 {
 	int numChann;
 
@@ -635,47 +530,17 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 	//open song length database
 	if((m_playerConfig.useSongLengthFile) && (m_playerConfig.songLengthsFile != NULL))
 	{
-		bool openRes = m_sidDatabase.open(m_playerConfig.songLengthsFile);
-		if(openRes != 0) MessageBoxA(NULL,"Error opening songlength database.\r\nDisable songlength databse or choose other file","in_sidplay2",MB_OK);
-	}
-	//open STIL file
-	if((m_playerConfig.useSTILfile) && (m_playerConfig.hvscDirectory != NULL))
-	{
-		ClearSTILData();
-		FillSTILData();
-		FillSTILData2();
+		/*bool openRes = */m_sidDatabase.open(m_playerConfig.songLengthsFile);
+		//if(openRes != 0) MessageBoxA(NULL,"Error opening songlength database.\r\nDisable songlength databse or choose other file","in_sidplay2",MB_OK);
 	}
 }
 
-int CThreadSidPlayer::GetSongLength(SidTune &tune)
-{
-	int length;
-
-	if (tune.getStatus() == false)
-	{
-		//MessageBoxA(NULL, "Tune status invalid", "Error", MB_OK);
-		return -1;
-	}
-
-	length = m_sidDatabase.length(tune);
-	if ((m_playerConfig.playLimitEnabled) && (length <= 0))
-	{
-		length = m_playerConfig.playLimitSec;
-	}
-	
-	if (length < 0)
-	{
-		return 0;
-	}
-	return length;
-}
-
-int CThreadSidPlayer::GetSongLength()
+int CThreadSidDecoder::GetSongLength()
 {
 	return m_currentTuneLength;
 }
 
-void CThreadSidPlayer::DoSeek()
+void CThreadSidDecoder::DoSeek()
 {
 	int bits;
 	int skip_bytes;
@@ -727,236 +592,7 @@ void CThreadSidPlayer::DoSeek()
 }
 
 
-void CThreadSidPlayer::SeekTo(int timeMs)
+void CThreadSidDecoder::SeekTo(int timeMs)
 {
 	m_seekNeedMs = timeMs;
-}
-
-void CThreadSidPlayer::FillSTILData()
-{
-	const int BUFLEN = 160;
-	string strKey;
-	string strInfo;
-	char buf[BUFLEN];
-
-	m.clear();
-	FILE *f;
-	strcpy(buf, m_playerConfig.hvscDirectory);
-	strcat(buf, "\\documents\\stil.txt");
-	f = fopen(buf, "rb+");
-	if (f == NULL)
-	{
-		MessageBoxA(NULL, "Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", "in_sidplay2", MB_OK);
-		return;
-	}
-	while (feof(f) == 0)
-	{
-		ReadLine(buf, f, 160);
-		strKey.clear();
-		strInfo.clear();
-		if (buf[0] == '/') //new file block
-		{
-			strKey.assign(buf);
-			FixPath(strKey);//.replace("/","\\");
-			ReadLine(buf, f, BUFLEN);
-			while (strlen(buf) > 0)
-			{
-				strInfo.append(buf);
-				strInfo.append("\r\n");
-				ReadLine(buf, f, BUFLEN);
-			}
-			m[_strdup(strKey.c_str())] = _strdup(strInfo.c_str());
-		}
-	}
-	fclose(f);
-}
-
-void CThreadSidPlayer::FillSTILData2()
-{
-	const int BUFLEN = 160;
-	const char* ARTIST =	" ARTIST:";
-	const char* TITLE =		"  TITLE:";
-	const char* COMMENT =	"COMMENT:";
-	const char* AUTHOR = " AUTHOR:";
-	const char* NAME = "   NAME:";
-	string strKey;
-	//string strInfo;
-	string tmpStr;
-	char buf[BUFLEN];
-	int currentSubsong;
-	StilBlock* stillBlock;
-	vector<StilBlock*> subsongsInfo;
-
-	m_stillMap2.clear();
-	FILE *f;
-	strcpy(buf, m_playerConfig.hvscDirectory);
-	strcat(buf, "\\documents\\stil.txt");
-	f = fopen(buf, "rb+");
-	if (f == NULL)
-	{
-		MessageBoxA(NULL, "Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", "in_sidplay2", MB_OK);
-		return;
-	}
-	while (feof(f) == 0)
-	{
-		ReadLine(buf, f, 160);
-		strKey.clear();
-		if (buf[0] == '/') //new file block
-		{
-			strKey.assign(buf);
-			FixPath(strKey);//.replace("/","\\");
-			currentSubsong = 0;
-
-			ReadLine(buf, f, BUFLEN);
-			stillBlock = new StilBlock;
-			subsongsInfo = m_stillMap2[_strdup(strKey.c_str())];
-			subsongsInfo.push_back(NULL);
-			while (strlen(buf) > 0)
-			{
-				tmpStr.assign(buf);
-				//check for subsong numer
-				if (tmpStr.compare(0, 2, "(#") == 0)
-				{
-					int newSubsong = atoi(tmpStr.substr(2, tmpStr.length() - 3).c_str());
-					//if subsong number is different than 1 then store current info and set subsong number to new value
-					if (newSubsong != 1)
-					{
-						//store current subsong info
-						subsongsInfo[currentSubsong] = stillBlock;
-						currentSubsong = newSubsong-1;
-						//ajust vetor size to number of subsongs
-						while (subsongsInfo.size() <= newSubsong)
-						{
-							subsongsInfo.push_back(NULL);
-						}
-						stillBlock = new StilBlock;
-					}
-				}
-				//ARTIST
-				if (tmpStr.compare(0, strlen(ARTIST), ARTIST) == 0)
-				{
-					stillBlock->ARTIST = tmpStr.substr(strlen(ARTIST) + 1);
-				}
-				//TITLE
-				if (tmpStr.compare(0, strlen(TITLE), TITLE) == 0)
-				{
-					if (stillBlock->TITLE.empty())
-					{
-						stillBlock->TITLE = tmpStr.substr(strlen(TITLE) + 1);
-					}
-					else
-					{
-						stillBlock->TITLE.append(",");
-						stillBlock->TITLE.append(tmpStr.substr(strlen(TITLE) + 1));
-					}
-				}
-				//AUTHOR
-				if (tmpStr.compare(0, strlen(AUTHOR), AUTHOR) == 0)
-				{
-					stillBlock->AUTHOR = tmpStr.substr(strlen(AUTHOR) + 1);
-				}
-				//NAME
-				if (tmpStr.compare(0, strlen(NAME), NAME) == 0)
-				{
-					stillBlock->NAME = tmpStr.substr(strlen(NAME) + 1);
-				}
-				//COMMENT
-				if (tmpStr.compare(0, strlen(COMMENT), COMMENT) == 0)
-				{
-					stillBlock->COMMENT = tmpStr.substr(strlen(COMMENT) + 1);
-				}
-				ReadLine(buf, f, BUFLEN);
-			}
-			subsongsInfo[currentSubsong] = stillBlock;
-
-			m_stillMap2[_strdup(strKey.c_str())] = subsongsInfo;
-		}
-	}
-	fclose(f);
-}
-
-void CThreadSidPlayer::FixPath(string& path)
-{
-	int i;
-	for(i=0; i<path.length();++i)
-	{
-		if(path[i] == '/') path[i] = '\\';
-	}
-}
-
-const char* CThreadSidPlayer::GetSTILData(const char* filePath)
-{
-	map<const char*,char*,ltstr>::iterator i;
-	char* stilFileName;
-
-	if((filePath == NULL)||(m_playerConfig.hvscDirectory == NULL)) return NULL;
-	if(strlen(filePath) < strlen(m_playerConfig.hvscDirectory)) return NULL;
-	stilFileName = new char[strlen(filePath) - strlen(m_playerConfig.hvscDirectory) +1];
-	strcpy(stilFileName,&filePath[strlen(m_playerConfig.hvscDirectory)]);
-	//i = m.find("aa\\DEMOS\\A-F\\Afterburner.sid");
-	i = m.find(stilFileName);
-	delete[] stilFileName;
-	if(i == m.end())
-	{
-		return NULL;
-	}
-	return i->second;
-	//if(i == NULL) return;
-}
-
-const StilBlock* CThreadSidPlayer::GetSTILData2(const char* filePath, int subsong)
-{
-	map<const char*, vector<StilBlock*>, ltstr>::iterator i;
-	char* stilFileName;
-
-	if ((filePath == NULL) || (m_playerConfig.hvscDirectory == NULL)) return NULL;
-	if (strlen(filePath) < strlen(m_playerConfig.hvscDirectory)) return NULL;
-	stilFileName = new char[strlen(filePath) - strlen(m_playerConfig.hvscDirectory) + 1];
-	strcpy(stilFileName, &filePath[strlen(m_playerConfig.hvscDirectory)]);
-	//i = m.find("aa\\DEMOS\\A-F\\Afterburner.sid");
-	i = m_stillMap2.find(stilFileName);
-	delete[] stilFileName;
-	if (i == m_stillMap2.end())
-	{
-		return NULL;
-	}
-
-	if (subsong < i->second.size())
-	{
-		return i->second[subsong];
-	}
-	return NULL;
-	//if(i == NULL) return;
-}
-
-void CThreadSidPlayer::ClearSTILData(void)
-{
-	map<const char*, char*,ltstr>::iterator it = m.begin();
-	while(it != m.end())
-	{
-		//const char *x= it->first;
-		//const char *y= it->second;
-		delete[] it->first;
-		delete[] it->second;
-		++it;
-	}
-	m.clear();
-
-	map<const char*, vector<StilBlock*>, ltstr>::iterator it2 = m_stillMap2.begin();
-	while (it2 != m_stillMap2.end())
-	{
-		//const char *x = it2->first;
-		vector<StilBlock*> y = it2->second;
-		delete[] it2->first;
-		for (vector<StilBlock*>::iterator it3 = y.begin(); it3 != y.end(); ++it3)
-		{
-			if ((*it3) != NULL)
-			{
-				delete *it3;
-			}
-		}
-		y.clear();
-		++it2;
-	}
-	m_stillMap2.clear();
 }

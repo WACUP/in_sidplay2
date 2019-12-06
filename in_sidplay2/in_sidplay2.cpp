@@ -4,13 +4,18 @@
 #include <windows.h>
 #include <sdk/winamp/in2.h>
 #include "ThreadSidplayer.h"
+#include "ThreadSidDecoder.h"
 #include "resource.h"
-#include "aboutdlg.h"
 #include "configdlg.h"
 #include "infodlg.h"
 //#include "subsongdlg.h"
 #include <sdk/winamp/wa_ipc.h>
 #include <sdk/winamp/ipc_pe.h>
+#include <sdk/nu/autocharfn.h>
+#include <sdk/nu/autowide.h>
+#define SKIP_INT_DEFINES
+#include <sdk/Agave/Language/api_language.h>
+#include <loader/loader/utils.h>
 #include "helpers.h"
 
 #include <fcntl.h>
@@ -18,13 +23,26 @@
 #include <io.h>
 #include <string>
 #include <vector>
+#include <strsafe.h>
+
+#define PLUGIN_VERSION L"2.1.5.7"
+
+// TODO
+// {5DF925A4-2095-460a-9394-155378C9D18B}
+static const GUID InSidiousLangGUID = 
+{ 0x5df925a4, 0x2095, 0x460a, { 0x93, 0x94, 0x15, 0x53, 0x78, 0xc9, 0xd1, 0x8b } };
+
+// wasabi based services for localisation support
+api_language *WASABI_API_LNG = 0;
+HINSTANCE WASABI_API_LNG_HINST = 0, WASABI_API_ORIG_HINST = 0;
 
 In_Module inmod;
 CThreadSidPlayer *sidPlayer = NULL;
 HANDLE gUpdaterThreadHandle = 0;
 HANDLE gMutex = 0;
 
-DWORD AddSubsongsThreadProc(void* params);
+void GetFileExtensions(void);
+DWORD WINAPI AddSubsongsThreadProc(void* params);
 
 /** Structure for passing parameters to worker thread for adding subsong
 */
@@ -38,95 +56,95 @@ typedef struct tAddSubsongParams
 
 void config(HWND hwndParent)
 {
-	DialogBoxParam(inmod.hDllInstance,MAKEINTRESOURCE(IDD_CONFIG_DLG),hwndParent,&ConfigDlgWndProc,NULL);
-	SetFocus(hwndParent);
+	WASABI_API_DIALOGBOXPARAMW(IDD_CONFIG_DLG,hwndParent,&ConfigDlgWndProc,NULL);
 }
 
 void about(HWND hwndParent)
 {
-	DialogBox(inmod.hDllInstance,MAKEINTRESOURCE(IDD_ABOUTDLG),hwndParent,&AboutDlgWndProc);
-	SetFocus(hwndParent);
+	wchar_t message[1024] = {0}, title[256] = {0};
+	StringCchPrintf(message, 1024, WASABI_API_LNGSTRINGW(IDS_ABOUT_STRING),
+					WASABI_API_LNGSTRINGW_BUF(IDS_PLUGIN_NAME, title, 256),
+					PLUGIN_VERSION, TEXT(__DATE__));
+	AboutMessageBox(hwndParent, message, title);
 }
 
-void OpenConsole()
-{
-	AllocConsole();
-
-    HANDLE handle_out = GetStdHandle(STD_OUTPUT_HANDLE);
-    int hCrt = _open_osfhandle((long) handle_out, _O_TEXT);
-    FILE* hf_out = _fdopen(hCrt, "w");
-    setvbuf(hf_out, NULL, _IONBF, 1);
-    *stdout = *hf_out;
-
-    HANDLE handle_in = GetStdHandle(STD_INPUT_HANDLE);
-    hCrt = _open_osfhandle((long) handle_in, _O_TEXT);
-    FILE* hf_in = _fdopen(hCrt, "r");
-    setvbuf(hf_in, NULL, _IONBF, 128);
-    *stdin = *hf_in;
-}
-
-void init() 
+void createsidplayer()
 { 
-	//OpenConsole();
+	if (sidPlayer == NULL)
+	{
+		sidPlayer = new CThreadSidPlayer(inmod);
 
-	/* any one-time initialization goes here (configuration reading, etc) */ 
-	sidPlayer = new CThreadSidPlayer(inmod);
-	sidPlayer->Init();
+		if (sidPlayer != NULL)
+		{
+		sidPlayer->Init();
 
-	gMutex = CreateMutex(NULL, FALSE, NULL);
+		gMutex = CreateMutex(NULL, FALSE, NULL);
+	}
+	}
+}
 
+int init() 
+{ 
+	WASABI_API_LNG = inmod.language;
 
+	// need to have this initialised before we try to do anything with localisation features
+	WASABI_API_START_LANG(inmod.hDllInstance, InSidiousLangGUID);
+
+	// TODO localise
+	inmod.description = (char*)(TEXT("SID Player v") PLUGIN_VERSION);
+	return IN_INIT_SUCCESS;
 }
 
 void quit() { 
 	/* one-time deinit, such as memory freeing */ 
-	if (gMutex != 0)
+	if (gMutex != NULL)
 	{
 		CloseHandle(gMutex);
+		gMutex = NULL;
 	}
-	if (gUpdaterThreadHandle != 0)
+
+	if (gUpdaterThreadHandle != NULL)
 	{
 		CloseHandle(gUpdaterThreadHandle);
+		gUpdaterThreadHandle = NULL;
 	}
-	if(sidPlayer != NULL)
+
+	if (sidPlayer != NULL)
 	{
 		sidPlayer->Stop();
 		delete sidPlayer;
+		sidPlayer = NULL;
 	}
 }
 
-int isourfile(const char *fn) { 
-// used for detecting URL streams.. unused here. 
-// return !strncmp(fn,"http://",7); to detect HTTP streams, etc
+int isourfile(const in_char *fn) { 
 	return 0; 
 } 
 
-
 // called when winamp wants to play a file
-int play(const char *fn) 
+int play(const in_char *fn) 
 { 
-	const SidTuneInfo* si;
-	char buf[20];
-	PlayerConfig cfg;
-	std::string strFilename;
-	std::string str;
-	int i,j;
-	int subsongIndex = 1;
-	if(sidPlayer == NULL) init();
+	std::string strFilename, str;
 
-	strFilename.assign(fn);
+	createsidplayer();
+	if(sidPlayer == NULL)
+	{
+		//error we cannot recover from
+		return 1;
+	}
 
-	i = strFilename.find('}');
+	strFilename.assign(AutoCharFn(fn));
+
+	int i = strFilename.find('}');
 	if(i > 0) 
 	{
 		//assume char '{' will never occur in name unless its our subsong sign
-		j = strFilename.find('{');
+		int j = strFilename.find('{');
 		str = strFilename.substr(j+1,i -j -1);
-		subsongIndex = atoi(str.c_str());
+		int subsongIndex = atoi(str.c_str());
 		strFilename = strFilename.substr(i+1);
 		sidPlayer->LoadTune(strFilename.c_str());
 		sidPlayer->PlaySubtune(subsongIndex);
-
 	}
 	else 
 	{
@@ -139,10 +157,7 @@ int play(const char *fn)
 		sidPlayer->PlaySubtune(tuneInfo->startSong());
 		// m_tune.getInfo()->startSong();
 		//sidPlayer->PlaySubtune(subsongIndex);
-
 	}
-
-
 
 	return 0; 
 }
@@ -150,34 +165,41 @@ int play(const char *fn)
 // standard pause implementation
 void pause() 
 {
+	if (sidPlayer != NULL)
+	{
 	sidPlayer->Pause();
+}
 }
 
 void unpause() 
 {
+	if (sidPlayer != NULL)
+	{
 	sidPlayer->Play();
+}
 }
 
 int ispaused() 
 { 
-	return (sidPlayer->GetPlayerStatus() == SP_PAUSED)? 1 : 0;
+	return ((sidPlayer != NULL) ? ((sidPlayer->GetPlayerStatus() == SP_PAUSED) ? 1 : 0) : 0);
 }
-
 
 // stop playing.
 void stop() 
 { 
+	if (sidPlayer != NULL)
+	{
 	sidPlayer->Stop();
 }
-
+}
 
 // returns length of playing track
 int getlength() 
 {
 	//return (sidPlayer->GetNumSubtunes()-1)*1000;
-	return sidPlayer->GetSongLength()*1000;
+	createsidplayer();
+	return ((sidPlayer!= NULL) ? sidPlayer->GetSongLength()*1000 : 0);
 }
-
 
 // returns current output position, in ms.
 // you could just use return mod.outMod->GetOutputTime(),
@@ -187,9 +209,8 @@ int getoutputtime()
 { 
 	//return sidPlayer->CurrentSubtune()*1000;
 	//return inmod.outMod->GetOutputTime();
-	return sidPlayer->GetPlayTime();
+	return ((sidPlayer!= NULL) ? sidPlayer->GetPlayTime() : 0);
 }
-
 
 // called when the user releases the seek scroll bar.
 // usually we use it to set seek_needed to the seek
@@ -197,10 +218,12 @@ int getoutputtime()
 // and the decode thread checks seek_needed.
 void setoutputtime(int time_in_ms) 
 { 
+	if (sidPlayer != NULL)
+	{
 	//sidPlayer->PlaySubtune((time_in_ms / 1000)+1);
 	sidPlayer->SeekTo(time_in_ms);
 }
-
+}
 
 // standard volume/pan functions
 void setvolume(int volume) { inmod.outMod->SetVolume(volume); }
@@ -209,25 +232,9 @@ void setpan(int pan) { inmod.outMod->SetPan(pan); }
 // this gets called when the use hits Alt+3 to get the file info.
 // if you need more info, ask me :)
 
-int infoDlg(const char *fn, HWND hwnd)
+int infoDlg(const in_char *fn, HWND hwnd)
 {
-	HWND wnd;
-	const SidTuneInfo* info;
-	SidTune tune(0);
-	int i;
-	std::string strfilename;
-
-	strfilename.assign(fn);
-	i = strfilename.find('}');
-	if(i > 0) 
-	{
-		strfilename = strfilename.substr(i+1);
-	}
-	tune.load(strfilename.c_str());
-	info = tune.getInfo();
-	DialogBoxParam(inmod.hDllInstance,MAKEINTRESOURCE(IDD_FILEINFODLG),hwnd,InfoDlgWndProc,(LPARAM)info);
-	//ShowWindow(wnd,SW_SHOW);
-	return 0;
+	return INFOBOX_UNCHANGED;
 }
 
 /**
@@ -240,19 +247,18 @@ void conditionsReplace(std::string& formatString, const StilBlock* stilBlock, co
 	const int BUF_SIZE = 30;
 	std::string conditionToken;
 	int tokenBeginPos = 0;
-	int tokenEndPos = 0;
 	vector<string> tokens;
 	char toReplaceToken[BUF_SIZE];
 
 	while ((tokenBeginPos = formatString.find("%{", tokenBeginPos)) >= 0)
 	{
-		tokenEndPos = formatString.find('}', tokenBeginPos);
+		int tokenEndPos = formatString.find('}', tokenBeginPos);
 		if (tokenEndPos < 0)
 		{
 			break;
 		}
 		conditionToken = formatString.substr(tokenBeginPos + 2, tokenEndPos - tokenBeginPos - 2);
-		sprintf(toReplaceToken, "%%{%s}", conditionToken.c_str());
+		StringCchPrintfA(toReplaceToken, 30, "%%{%s}", conditionToken.c_str());
 
 		if (!conditionToken.empty())
 		{
@@ -318,6 +324,15 @@ void conditionsReplace(std::string& formatString, const StilBlock* stilBlock, co
 	}
 }
 
+const StilBlock *getStilBlock(const std::string &strFilename, const int subsongIndex)
+{
+	const StilBlock* sb = NULL;
+	if ((sidPlayer != NULL) && (sidPlayer->GetCurrentConfig().useSTILfile == true))
+	{
+		sb = sidPlayer->GetSTILData2(strFilename.c_str(), subsongIndex - 1);
+	}
+	return sb;
+}
 
 // this is an odd function. it is used to get the title and/or
 // length of a track.
@@ -326,21 +341,19 @@ void conditionsReplace(std::string& formatString, const StilBlock* stilBlock, co
 // for the file in filename.
 // if title is NULL, no title is copied into it.
 // if length_in_ms is NULL, no length is copied into it.
-void getfileinfo(const char *filename, char *title, int *length_in_ms)
+void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 {
-	const SidTuneInfo* info;
+	const SidTuneInfo* info = NULL;
 	std::string str;
 	std::string strFilename;
 	int length;
 	SidTune tune(0);
 	int i;
-	int foundindex;
+	int foundindex = -1;
 	int subsongIndex = 1;
-	char buf[20];
 	int plLength;
-	char *plfilename;
-	HWND h;
-	char* foundChar;
+	wchar_t *plfilename;
+	wchar_t* foundChar;
 	bool firstSong = true;
 
 	WaitForSingleObject(gMutex, INFINITE);
@@ -350,22 +363,29 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 		gUpdaterThreadHandle = 0;
 	}
 
-	if((filename == NULL) || (strlen(filename) == 0))
+	createsidplayer();
+
+	if (!filename || !filename[0])
 	{
 		//get current song info
+		if (sidPlayer != NULL)
+		{
 		info = sidPlayer->GetTuneInfo();
+		}
 		if (info == NULL)
 		{
 			ReleaseMutex(gMutex);
 			return;
 		}
+
 		length = sidPlayer->GetSongLength();
 		if (length == -1)
 		{
 			ReleaseMutex(gMutex);
 			return;
 		}
-		subsongIndex = info->currentSong();//.currentSong;
+
+		//subsongIndex = info->currentSong();//.currentSong;
 		strFilename.assign(info->path());
 		strFilename.append(info->dataFileName());
 		subsongIndex = sidPlayer->CurrentSubtune();
@@ -373,9 +393,9 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 	else
 	{
 		subsongIndex = 1;
-		strFilename.assign(filename);
+		strFilename.assign(AutoCharFn(filename));
 		if(strFilename[0] == '{') 
-		{		
+		{
 			firstSong = false;
 			//assume char '{' will never occur in name unless its our subsong sign
 			i = strFilename.find('}');
@@ -394,8 +414,10 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 				ReleaseMutex(gMutex);
 				return;
 			}
+
 			subsongIndex = tune.getInfo()->startSong();
 		}
+
 		info = tune.getInfo();
 		//tune.selectSong(info.startSong);
 		tune.selectSong(subsongIndex);
@@ -414,9 +436,17 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 		ReleaseMutex(gMutex);
 		return;
 	}
- 	length *= 1000;
-	if( length <0) length =0;
-	if(length_in_ms != NULL) *length_in_ms = length;
+
+	length *= 1000;
+	if (length <= 0)
+	{
+		length = -1000;
+	}
+
+	if (length_in_ms != NULL)
+	{
+		*length_in_ms = length;
+	}
 	
 	/* build file title from template:
 	%f - filename
@@ -441,31 +471,22 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 
 
 	//std::string titleTemplate("%f / %a / %x %sn");
-	std::string titleTemplate(sidPlayer->GetCurrentConfig().playlistFormat);
-	std::string subsongTemplate(sidPlayer->GetCurrentConfig().subsongFormat);
+	std::string titleTemplate("%t %x / %a / %r / %sn");
+	std::string subsongTemplate("%n");
 
 
 	//fill STIL data if necessary
-	const StilBlock* sb = NULL;
-	if (sidPlayer->GetCurrentConfig().useSTILfile == true)
-	{
-		sb = sidPlayer->GetSTILData2(strFilename.c_str(), subsongIndex - 1);
-	}
-	else
-	{
-		sb = NULL;
-	}
+	const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
 	conditionsReplace(titleTemplate, sb, info);
 
 	replaceAll(titleTemplate, "%f", fileNameOnly.c_str());
 	replaceAll(titleTemplate, "%t", info->infoString(0));
 	replaceAll(titleTemplate, "%a", info->infoString(1));
 	replaceAll(titleTemplate, "%r", info->infoString(2));
-	if(info->songs() > 1) 
+	if (info->songs() > 1) 
 	{
-		sprintf(buf,"%02d", subsongIndex);
-		//itoa(subsongIndex, buf, 10);
-		//replaceAll(subsongTemplate, "%n", _itoa(subsongIndex, buf, 10));
+		char buf[20] = {0};
+		StringCchPrintfA(buf,20,"%02d", subsongIndex);
 		replaceAll(subsongTemplate, "%n", buf);
 		replaceAll(titleTemplate, "%x", subsongTemplate.c_str());
 	}
@@ -490,10 +511,12 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 		replaceAll(titleTemplate, "%sn", sb->NAME.c_str());
 	}
 
-	if(title != NULL) 
-		strcpy(title, titleTemplate.c_str());
+	if (title != NULL)
+	{
+		lstrcpyn(title, AutoWide(titleTemplate.c_str()), GETFILEINFO_TITLE_LENGTH);
+	}
 
-	if ((info->songs() == 1) || (firstSong == false) || (filename == NULL) || (strlen(filename) == 0))
+	if ((info->songs() == 1) || (firstSong == false) || !filename || !filename[0])
 	{
 		ReleaseMutex(gMutex);
 		return;
@@ -502,12 +525,12 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 	//we have subsongs...
 	plLength = (int)SendMessage(inmod.hMainWindow,WM_WA_IPC,0,IPC_GETLISTLENGTH);
 	//check if we have already added subsongs
-	for(i=0; i<plLength;++i)
+	for (i=0; i<plLength;++i)
 	{
-		plfilename = (char*)SendMessage(inmod.hMainWindow,WM_WA_IPC,i,IPC_GETPLAYLISTFILE);
-		if((plfilename == NULL)||(plfilename[0] != '{')) continue;		
-		foundChar = strchr(plfilename,'}');
-		if(strcmp(foundChar+1,filename) == 0)
+		plfilename = (wchar_t*)SendMessage(inmod.hMainWindow,WM_WA_IPC,i,IPC_GETPLAYLISTFILEW);
+		if (!plfilename || (plfilename[0] != '{')) continue;
+		foundChar = wcschr(plfilename,L'}');
+		if (wcscmp(foundChar+1,filename) == 0)
 		{
 			//subtunes were added no point to do it again
 			ReleaseMutex(gMutex);
@@ -519,9 +542,9 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 	//first get entry index after which we will add subsong entry
 	for(i=0; i<plLength;++i)
 	{
-		plfilename = (char*)SendMessage(inmod.hMainWindow,WM_WA_IPC,i,IPC_GETPLAYLISTFILE);
-		if(plfilename == NULL) continue;
-		if(strcmp(plfilename,filename) == 0)
+		plfilename = (wchar_t*)SendMessage(inmod.hMainWindow,WM_WA_IPC,i,IPC_GETPLAYLISTFILEW);
+		if (!plfilename) continue;
+		if (wcscmp(plfilename,filename) == 0)
 		{
 			foundindex = i;
 			break;
@@ -533,24 +556,28 @@ void getfileinfo(const char *filename, char *title, int *length_in_ms)
 	threadParams->foundIndex = foundindex;
 	threadParams->numSubsongs = info->songs();
 	threadParams->startSong = info->startSong();
-	strcpy(threadParams->fileName, filename);
+	strncpy(threadParams->fileName, AutoCharFn(filename), 512);
 	gUpdaterThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AddSubsongsThreadProc, (void*)threadParams, 0, NULL);
 	ReleaseMutex(gMutex);
 	return;
 }
 
-DWORD AddSubsongsThreadProc(void* params)
+DWORD WINAPI AddSubsongsThreadProc(void* params)
 {
 	WaitForSingleObject(gMutex, INFINITE);
 
+	tAddSubsongParams* threadParams = reinterpret_cast<tAddSubsongParams*>(params);
 	fileinfo *fi = new fileinfo;
+	if (fi)
+	{
 	COPYDATASTRUCT *cds = new COPYDATASTRUCT;
+		if (cds)
+		{
 	std::string strFilename;
 	char buf[20];
-	tAddSubsongParams* threadParams = reinterpret_cast<tAddSubsongParams*>(params);
 	int foundindex = threadParams->foundIndex;
 	//get HWND of playlist window
-	HWND h = (HWND)SendMessage(inmod.hMainWindow, WM_WA_IPC, IPC_GETWND_PE, IPC_GETWND);
+			HWND h = GetPlaylistWnd();//(HWND)SendMessage(inmod.hMainWindow, WM_WA_IPC, IPC_GETWND_PE, IPC_GETWND);
 	for (int i = 1; i <= threadParams->numSubsongs; ++i)
 	{
 		//first entry in playlist will be the startSong that is why we don't add it
@@ -558,12 +585,13 @@ DWORD AddSubsongsThreadProc(void* params)
 		{
 			continue;
 		}
+
 		++foundindex;
-		sprintf(buf, "{%d}", i);
+		StringCchPrintfA(buf, 20, "{%d}", i);
 		strFilename.assign(buf);
 		strFilename.append(threadParams->fileName);
 		ZeroMemory(fi, sizeof(fileinfo));
-		strcpy(fi->file, strFilename.c_str());
+		strncpy(fi->file, strFilename.c_str(), MAX_PATH);
 		fi->index = foundindex;
 		ZeroMemory(cds, sizeof(COPYDATASTRUCT));
 		cds->dwData = IPC_PE_INSERTFILENAME;
@@ -571,41 +599,25 @@ DWORD AddSubsongsThreadProc(void* params)
 		cds->cbData = sizeof(fileinfo);
 		SendMessage(h, WM_COPYDATA, 0, (LPARAM)cds);
 	}
-	delete fi;
+
 	delete cds;
+		}
+		delete fi;
+	}
 	delete threadParams;
 
 	ReleaseMutex(gMutex);
 	return 0;
 }
 
-void eq_set(int on, char data[10], int preamp) 
-{ 
-	// most plug-ins can't even do an EQ anyhow.. I'm working on writing
-	// a generic PCM EQ, but it looks like it'll be a little too CPU 
-	// consuming to be useful :)
-	// if you _CAN_ do EQ with your format, each data byte is 0-63 (+20db <-> -20db)
-	// and preamp is the same. 
-}
-
-
 // module definition.
 extern In_Module inmod = 
 {
-	IN_VER,	// defined in IN2.H
-	"Winamp SIDPlayer (libsidplayfp) v2.1.5.0"
-	// winamp runs on both alpha systems and x86 ones. :)
-/*#ifdef __alpha
-	"(AXP)"
-#else
-	"(x86)"
-#endif*/
-	,
+	IN_VER_WACUP,	// defined in IN2.H
+	(char *)L"SID Player v" PLUGIN_VERSION,
 	0,	// hMainWindow (filled in by winamp)
 	0,  // hDllInstance (filled in by winamp)
-	"SID\0Sid File (*.sid)\0"
-	// this is a double-null limited list. "EXT\0Description\0EXT\0Description\0" etc.
-	,
+	NULL,	// filled in later
 	1,	// is_seekable
 	1,	// uses output plug-in system
 	config,
@@ -632,19 +644,386 @@ extern In_Module inmod =
 
 	0,0, // dsp calls filled in by winamp
 
-	eq_set,
+	NULL,
 
 	NULL,		// setinfo call filled in by winamp
 
-	0 // out_mod filled in by winamp
-
+	0,			// out_mod filled in by winamp
+	NULL,       // api_service
+	GetFileExtensions	// loading optimisation
 };
 
+void GetFileExtensions(void)
+{
+	static bool loaded_extensions;
+	if (!loaded_extensions)
+	{
+		// TODO localise
+		inmod.FileExtensions = (char*)L"SID\0Commodore 64 SID Music File (*.SID)\0";
+		loaded_extensions = true;
+	}
+}
 
-
-extern "C"
-__declspec(dllexport)
-In_Module* winampGetInModule2()
+extern "C" __declspec(dllexport) In_Module* winampGetInModule2()
 {
    return &inmod;
+}
+
+extern "C" __declspec(dllexport) int winampUninstallPlugin(HINSTANCE hDllInst, HWND hwndDlg, int param)
+{
+	// TODO
+	// prompt to remove our settings with default as no (just incase)
+	/*if (MessageBox( hwndDlg, WASABI_API_LNGSTRINGW( IDS_UNINSTALL_SETTINGS_PROMPT ),
+				    pluginTitle, MB_YESNO | MB_DEFBUTTON2 ) == IDYES ) {
+		WritePrivateProfileString(CONFIG_APP_NAME, 0, 0, GetPaths()->plugin_ini_file);
+	}*/
+
+	// as we're not hooking anything and have no settings we can support an on-the-fly uninstall action
+	return IN_PLUGIN_UNINSTALL_NOW;
+}
+
+// return 1 if you want winamp to show it's own file info dialogue, 0 if you want to show your own (via In_Module.InfoBox)
+// if returning 1, remember to implement winampGetExtendedFileInfo("formatinformation")!
+extern "C" __declspec(dllexport) int winampUseUnifiedFileInfoDlg(const wchar_t * fn)
+{
+	return 1;
+}
+
+// should return a child window of 513x271 pixels (341x164 in msvc dlg units), or return NULL for no tab.
+// Fill in name (a buffer of namelen characters), this is the title of the tab (defaults to "Advanced").
+// filename will be valid for the life of your window. n is the tab number. This function will first be 
+// called with n == 0, then n == 1 and so on until you return NULL (so you can add as many tabs as you like).
+// The window you return will recieve WM_COMMAND, IDOK/IDCANCEL messages when the user clicks OK or Cancel.
+// when the user edits a field which is duplicated in another pane, do a SendMessage(GetParent(hwnd),WM_USER,(WPARAM)L"fieldname",(LPARAM)L"newvalue");
+// this will be broadcast to all panes (including yours) as a WM_USER.
+extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const wchar_t * filename,
+																   HWND parent, wchar_t *name, size_t namelen)
+{
+	if (n == 0)
+	{
+		// add first pane
+		SetPropW(parent, L"INBUILT_NOWRITEINFO", (HANDLE)1);
+
+		const SidTuneInfo* info;
+		SidTune tune(0);
+		int i;
+		std::string strfilename;
+
+		strfilename.assign(AutoCharFn(filename));
+		i = strfilename.find('}');
+		if (i > 0) 
+		{
+			strfilename = strfilename.substr(i+1);
+		}
+		tune.load(strfilename.c_str());
+		info = tune.getInfo();
+		if (info)
+		{
+			// TODO localise
+			wcsncpy(name, L"STIL Information", namelen);
+			return WASABI_API_CREATEDIALOGPARAMW(IDD_INFO, parent, InfoDlgWndProc, (LPARAM)info);
+		}
+	}
+	return NULL;
+}
+
+extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filename, char *metadata, wchar_t *ret, int retlen)
+{
+	int retval = 0;
+
+	if (!_stricmp(metadata, "type"))
+	{
+		ret[0] = '0';
+		ret[1] = 0;
+		return 1;
+	}
+	else if (!_stricmp(metadata, "family") ||
+			 // TODO add more to "formatinformation" ?
+			 !_stricmp(metadata, "formatinformation"))
+	{
+		if (!filename || !filename[0])
+		{
+			return 0;
+		}
+
+		lstrcpyn(ret, L"Commodore 64 Music File", retlen);
+		return 1;
+	}
+
+	if (!filename || !*filename)
+	{
+		return 0;
+	}
+
+	createsidplayer();
+
+	const SidTuneInfo* info = NULL;
+	std::string str;
+	std::string strFilename;
+	int length;
+	SidTune tune(0);
+	int subsongIndex = 1;
+	//bool firstSong = true;
+
+	WaitForSingleObject(gMutex, INFINITE);
+	if (gUpdaterThreadHandle != 0)
+	{
+		CloseHandle(gUpdaterThreadHandle);
+		gUpdaterThreadHandle = 0;
+	}
+
+	if (!filename || !filename[0])
+	{
+		//get current song info
+		if (sidPlayer != NULL)
+		{
+		info = sidPlayer->GetTuneInfo();
+		}
+		if (info == NULL)
+		{
+			ReleaseMutex(gMutex);
+			return 0;
+		}
+
+		length = sidPlayer->GetSongLength();
+		if (length == -1)
+		{
+			ReleaseMutex(gMutex);
+			return 0;
+		}
+
+		//subsongIndex = info->currentSong();//.currentSong;
+		strFilename.assign(info->path());
+		strFilename.append(info->dataFileName());
+		subsongIndex = sidPlayer->CurrentSubtune();
+	}
+	else
+	{
+		subsongIndex = 1;
+		strFilename.assign(AutoCharFn(filename));
+		if (strFilename[0] == '{') 
+		{
+			//firstSong = false;
+			//assume char '{' will never occur in name unless its our subsong sign
+			int i = strFilename.find('}');
+			str = strFilename.substr(1,i -1);
+			subsongIndex = atoi(str.c_str());
+			strFilename = strFilename.substr(i+1);
+			//get info from other file if we got real name
+			tune.load(strFilename.c_str());
+		}
+		else
+		{
+			tune.load(strFilename.c_str());
+			info = tune.getInfo();
+			if (info == NULL)
+			{
+				ReleaseMutex(gMutex);
+				return 0;
+			}
+
+			subsongIndex = tune.getInfo()->startSong();
+		}
+
+		info = tune.getInfo();
+		//tune.selectSong(info.startSong);
+		tune.selectSong(subsongIndex);
+		length = sidPlayer->GetSongLength(tune);
+		if (length == -1)
+		{
+			ReleaseMutex(gMutex);
+			return 0;
+		}
+	}
+	
+	//check if we got correct tune info
+	//if (info.c64dataLen == 0) return;
+	if (!info || info->c64dataLen() == 0)
+	{
+		ReleaseMutex(gMutex);
+		return 0;
+	}
+
+	// even if no file, return a 1 and write "0"
+	if (!_stricmp(metadata, "length"))
+	{
+		length *= 1000;
+		if (length <= 0)
+		{
+			length = -1000;
+		}
+
+		_itow_s(length, ret, retlen, 10);
+		retval = 1;
+	}
+	else if (!_stricmp(metadata, "title"))
+	{
+		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
+		if (sb != NULL)
+		{
+			if (!sb->TITLE.empty())
+			{
+				StringCchPrintf(ret, retlen, L"%S", sb->TITLE.c_str());
+				return 1;
+			}
+		}
+
+		StringCchPrintf(ret, retlen, L"%S", info->infoString(0));
+		retval = 1;
+	}
+	else if (!_stricmp(metadata, "artist"))
+	{
+		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
+		if (sb != NULL)
+		{
+			if (!sb->ARTIST.empty())
+			{
+				StringCchPrintf(ret, retlen, L"%S", sb->ARTIST.c_str());
+				return 1;
+			}
+		}
+
+		StringCchPrintf(ret, retlen, L"%S", info->infoString(1));
+		retval = 1;
+	}
+	else if (!_stricmp(metadata, "album"))
+	{
+		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
+		if (sb != NULL)
+		{
+			if (!sb->NAME.empty())
+			{
+				StringCchPrintf(ret, retlen, L"%S", sb->NAME.c_str());
+				return 1;
+			}
+		}
+	}
+	else if (!_stricmp(metadata, "comment"))
+	{
+		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
+		if (sb != NULL)
+		{
+			if (!sb->COMMENT.empty())
+			{
+				StringCchPrintf(ret, retlen, L"%S", sb->COMMENT.c_str());
+				return 1;
+			}
+		}
+
+		StringCchPrintf(ret, retlen, L"%S", info->commentString(0));
+		retval = 1;
+	}
+	else if (!_stricmp(metadata, "publisher"))
+	{
+		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
+		if (sb != NULL)
+		{
+			if (!sb->AUTHOR.empty())
+			{
+				StringCchPrintf(ret, retlen, L"%S", sb->AUTHOR.c_str());
+				return 1;
+			}
+		}
+
+		// same string is used for both so we skip the
+		// first part to get to the publisher details
+		char *pub_str = (char *)info->infoString(2);
+		if (pub_str && *pub_str)
+		{
+			while (pub_str && *pub_str != ' ')
+			{
+				++pub_str;
+			}
+
+			if (pub_str && *pub_str)
+			{
+				if (*pub_str == ' ')
+				{
+					++pub_str;
+				}
+
+				StringCchPrintf(ret, retlen, L"%S", pub_str);
+				retval = 1;
+			}
+		}
+	}
+	else if (!_stricmp(metadata, "year"))
+	{
+		// same string is used for both so we ignore
+		// most of it & just attempt to get a number
+		char *year_str = (char *)info->infoString(2);
+		if (year_str && *year_str)
+		{
+			// copy up to the space into the buffer
+			int count = 0;
+			while (year_str && *year_str != ' ' && count < retlen)
+			{
+				ret[count] = *year_str;
+				++count;
+				++year_str;
+			}
+
+			retval = 1;
+		}
+	}
+	else if (!_stricmp(metadata, "track"))
+	{
+		if (info->songs() > 1) 
+		{
+			_itow_s(subsongIndex, ret, retlen, 10);
+		}
+		else
+		{
+			wcsncpy(ret, L"1", retlen);
+		}
+		retval = 1;
+	}
+
+	return retval;
+}
+
+/* *********************************** */
+/* placeholder for conversion api support */
+
+extern "C" __declspec(dllexport) intptr_t winampGetExtendedRead_openW(const wchar_t *fn, int *size, int *bps, int *nch, int *srate)
+{
+	CThreadSidDecoder *sidDecoder = new CThreadSidDecoder();
+	if (sidDecoder)
+	{
+		// TODO
+		return (intptr_t)sidDecoder;
+	}
+	return 0;
+}
+
+extern "C" __declspec(dllexport) size_t winampGetExtendedRead_getData(intptr_t handle, char *dest, size_t len, int *killswitch)
+{
+	CThreadSidDecoder *sidDecoder = (CThreadSidDecoder *)handle;
+	if (sidDecoder)
+	{
+		// TODO
+	return 0;
+}
+	return -1;
+}
+
+extern "C" __declspec(dllexport) int winampGetExtendedRead_setTime(intptr_t handle, int millisecs)
+{
+	CThreadSidDecoder *sidDecoder = (CThreadSidDecoder *)handle;
+	if (sidDecoder)
+	{
+		// TODO
+		return 1;
+	}
+	return 0;
+}
+
+extern "C" __declspec(dllexport) void winampGetExtendedRead_close(intptr_t handle)
+{
+	CThreadSidDecoder *sidDecoder = (CThreadSidDecoder *)handle;
+	if (sidDecoder)
+	{
+		sidDecoder->Stop();
+		delete sidDecoder;
+	}
 }

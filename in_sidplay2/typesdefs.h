@@ -24,6 +24,4 @@ typedef struct PlayerConfig
 	bool voiceConfig[3][3];
 	bool pseudoStereo;
 	SidConfig::sid_model_t sid2Model;
-	char* playlistFormat;
-	char* subsongFormat;
 } PlayerConfig;

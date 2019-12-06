@@ -126,7 +126,7 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="2"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;..\ResidFp\libsidplayfp\src\builders\residfp-builder&quot;;..\ResidFp\libsidplayfp\win32;..\ResidFp\libsidplayfp\src;..\.."
+				AdditionalIncludeDirectories="&quot;..\ResidFp\libsidplayfp\src\builders\residfp-builder&quot;;..\ResidFp\libsidplayfp\win32;..\ResidFp\libsidplayfp\src;..\..;..\..\sdk\Wasabi"
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IN_SIDPLAY2_EXPORTS;HAVE_MSWINDOWS;UNICODE_INPUT_PLUGIN;_WIN32_WINNT=_WIN32_WINNT_WIN7;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;STRSAFE_USE_SECURE_CRT;STRSAFE_LIB"
 				StringPooling="true"
 				RuntimeLibrary="2"
@@ -150,6 +150,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="shlwapi.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories=""
 				GenerateManifest="false"
@@ -180,6 +181,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
+				CommandLine="copy &quot;$(TargetDir)\in_sidious.dll&quot; &quot;C:\Program Files (x86)\WinampAlt\Plugins&quot; /y&#x0D;&#x0A;copy &quot;$(TargetDir)\in_sidious.dll&quot; &quot;..\..\installer\wacup_files\Plugins&quot; /y&#x0D;&#x0A;REM ..\sdk\lng_generator\lng_generator &quot;Release\in_sidious.dll&quot; /build en-us&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -191,10 +193,6 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath=".\aboutDlg.cpp"
-				>
-			</File>
 			<File
 				RelativePath=".\configDlg.cpp"
 				>
@@ -220,6 +218,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ThreadSidDecoder.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ThreadSidPlayer.cpp"
 				>
 			</File>
@@ -229,10 +231,6 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
-			<File
-				RelativePath=".\aboutDlg.h"
-				>
-			</File>
 			<File
 				RelativePath=".\c64roms.h"
 				>
@@ -263,6 +261,10 @@
 			</File>
 			<File
 				RelativePath=".\subSongDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ThreadSidDecoder.h"
 				>
 			</File>
 			<File

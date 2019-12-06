@@ -64,9 +64,97 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 // Dialog
 //
 
-IDD_CONFIG_DLG DIALOGEX 0, 0, 300, 353
+#if defined(APSTUDIO_INVOKED) || !defined(ORIGINAL)
+IDD_CONFIG_DLG DIALOGEX 0, 0, 276, 279
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Sidplayer configuration"
+CAPTION "SID Player Configuration"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Output settings",IDC_STATIC,6,3,263,72
+    LTEXT           "Frequency:",IDC_STATIC,14,22,40,10,SS_CENTERIMAGE
+    COMBOBOX        IDC_FREQUENCY,56,21,72,36,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Channels:",IDC_STATIC,14,40,36,10,SS_CENTERIMAGE
+    COMBOBOX        IDC_CHANNELS,56,39,72,36,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Sid1",IDC_STATIC,155,11,14,8
+    CONTROL         "Voice1",IDC_VOICE00,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,140,22,37,10
+    CONTROL         "Voice2",IDC_VOICE01,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,140,35,37,10
+    CONTROL         "Voice3",IDC_VOICE02,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,140,48,37,10
+    LTEXT           "Sid2",IDC_STATIC,197,11,14,8
+    CONTROL         "Voice1",IDC_VOICE10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,22,37,10
+    CONTROL         "Voice2",IDC_VOICE11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,35,37,10
+    CONTROL         "Voice3",IDC_VOICE12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,48,37,10
+    LTEXT           "Sid3",IDC_STATIC,239,11,14,8
+    CONTROL         "Voice1",IDC_VOICE20,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,224,22,37,10
+    CONTROL         "Vocie2",IDC_VOICE21,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,224,35,37,10
+    CONTROL         "Voice3",IDC_VOICE22,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,224,48,37,10
+    CTEXT           "|_ Affects pseudo stereo_|",IDC_STATIC,133,61,90,8
+    GROUPBOX        "Emulation",IDC_STATIC,6,78,263,80
+    LTEXT           "C64 model:",IDC_STATIC,14,91,54,8
+    COMBOBOX        IDC_C64MODEL,68,89,72,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Force C64 model",IDC_FORCE_C64MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,90,90,10
+    CONTROL         "Enable pseudo stereo",IDC_PSEUDOSTEREO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,107,85,10
+    LTEXT           "SID model:",IDC_STATIC,14,123,36,8
+    COMBOBOX        IDC_SIDMODEL,68,121,72,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Force SID model",IDC_FORCE_SID_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,122,96,10
+    LTEXT           "SID2 model:",IDC_STATIC,14,140,48,8
+    COMBOBOX        IDC_SID2MODEL,68,138,72,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Force SID2 model",IDC_FORCE_SID2_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,139,72,10
+    GROUPBOX        "Miscellaneous",IDC_STATIC,6,161,263,95
+    CONTROL         "Song play time limit [s]:",IDC_PLAYLIMIT_CHK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,173,90,12
+    EDITTEXT        IDC_PLAYLIMITTIME,104,173,36,12,ES_AUTOHSCROLL
+    LTEXT           "This is used when there is no song length database / song is unknown.",IDC_STATIC,146,171,118,18
+    CONTROL         "Use the song length database",IDC_ENABLESONGLENDB,
+                    "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,13,192,70,18
+    EDITTEXT        IDC_SONGLENGTHFILE,88,195,132,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse...",IDC_BROWSE_BTN,220,194,44,14
+    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.txt)",IDC_STATIC,23,210,241,8
+    CONTROL         "Use STIL (from the HVSC folder)",IDC_ENABLESTIL,"Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,13,224,70,18
+    EDITTEXT        IDC_HVSCDIR,88,224,132,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse....",IDC_BROWSE_HVSC,220,223,44,15
+    LTEXT           "(e.g. c:\\HVSC\\c64Music). This works independently of the songlength.",IDC_STATIC,23,240,241,8
+    DEFPUSHBUTTON   "&OK",IDOK,89,260,50,14
+    PUSHBUTTON      "&Cancel",IDCANCEL,143,260,50,14
+END
+#endif
+
+IDD_INFO DIALOGEX 0, 0, 341, 164
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Advanced",IDC_STATIC,0,0,341,164
+    GROUPBOX        "File Details",IDC_STATIC,6,11,162,148
+    RTEXT           "Format:",IDC_STATIC,13,23,42,8
+    LTEXT           "",IDC_FORMATSTC,61,23,101,8
+    RTEXT           "Load addr:",IDC_STATIC,13,35,42,8
+    CONTROL         "",IDC_LOADADDR_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,35,60,8
+    RTEXT           "Init addr:",IDC_STATIC,13,47,42,8
+    CONTROL         "",IDC_INITADDR_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,47,60,8
+    RTEXT           "Play addr:",IDC_STATIC,13,60,42,8
+    CONTROL         "",IDC_PLAYADDR_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,60,60,8
+    RTEXT           "Subsongs:",IDC_STATIC,13,73,42,8
+    CONTROL         "",IDC_SUBSONGS_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,73,60,8
+    RTEXT           "SID model:",IDC_STATIC,13,86,42,8
+    CONTROL         "",IDC_SIDMODEL_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,86,60,8
+    RTEXT           "Clock speed:",IDC_STATIC,13,99,42,8
+    CONTROL         "",IDC_CLOCKSPEED_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,99,60,8
+    RTEXT           "File length:",IDC_STATIC,13,112,42,8
+    CONTROL         "",IDC_FILELENGTH_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,112,60,8
+    RTEXT           "SID2 Addr:",IDC_STATIC,13,125,42,8
+    CONTROL         "",IDC_SID2_ADDR,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,125,60,8
+    RTEXT           "SID3 Addr:",IDC_STATIC,13,138,42,8
+    CONTROL         "",IDC_SID3_ADDR,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,61,138,60,8
+    GROUPBOX        "STIL Information",IDC_STATIC,173,11,161,148
+    EDITTEXT        IDC_STIL_ED,181,23,147,130,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+END
+
+#if defined(APSTUDIO_INVOKED) || defined(ORIGINAL)
+#if defined(APSTUDIO_INVOKED)
+IDD_CONFIG_DLG$(ORIGINAL) DIALOGEX 0, 0, 300, 353
+#else
+IDD_CONFIG_DLG DIALOGEX 0, 0, 300, 353
+#endif
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "SID Player Configuration"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     GROUPBOX        "Output settings",IDC_STATIC,6,6,275,66
@@ -121,61 +209,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,90,335,50,14
     PUSHBUTTON      "Cancel",IDCANCEL,144,335,50,14
 END
-
-IDD_ABOUTDLG DIALOGEX 0, 0, 195, 145
-STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "in_sidplay2 2.1.5.0"
-FONT 8, "Microsoft Sans Serif", 700, 0, 0xEE
-BEGIN
-    LTEXT           "in_sidplay2 Winamp Module v2.1.5.0",IDC_STATIC,38,7,117,8
-    LTEXT           "© 2017-2018 Zbigniew Ross",IDC_STATIC,55,19,97,10
-    LTEXT           "zbigniew.ross@gmail.com",IDC_STATIC,56,30,83,8
-    LTEXT           "Licensed under the GNU General Public License (GPL)",IDC_STATIC,16,43,162,8
-    LTEXT           "Linked with libsidplayfp 2.0.0a and reSID-fp",IDC_STATIC,23,54,140,8
-    EDITTEXT        IDC_ABOUTED,18,67,157,52,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY
-    DEFPUSHBUTTON   "OK",IDOK,72,124,50,14
-END
-
-IDD_FILEINFODLG DIALOGEX 0, 0, 353, 267
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "File info"
-FONT 8, "MS Shell Dlg", 400, 0, 0x1
-BEGIN
-    EDITTEXT        IDC_FILEPATHNAME,6,6,342,12,ES_AUTOHSCROLL | ES_READONLY
-    GROUPBOX        "Basic info",IDC_STATIC,7,23,174,133
-    RTEXT           "Title:",IDC_STATIC,18,36,42,12
-    CONTROL         "Static",IDC_TITLE_STC,"Static",SS_LEFTNOWORDWRAP | SS_SUNKEN | WS_GROUP,66,36,108,12
-    RTEXT           "Author:",IDC_STATIC,18,50,42,12
-    CONTROL         "Static",IDC_AUTHOR_STC,"Static",SS_LEFTNOWORDWRAP | SS_SUNKEN | WS_GROUP,66,50,108,12
-    RTEXT           "Publisher:",IDC_STATIC,18,64,42,12
-    CONTROL         "Static",IDC_PUBLISHER_STC,"Static",SS_LEFTNOWORDWRAP | SS_SUNKEN | WS_GROUP,66,64,108,12
-    LTEXT           "Info:",IDC_STATIC,18,83,42,12
-    EDITTEXT        IDC_INOFBOX_STC,18,96,156,42,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY
-    GROUPBOX        "File details",IDC_STATIC,186,24,162,132
-    RTEXT           "Format:",IDC_STATIC,193,36,42,12
-    LTEXT           "Static",IDC_FORMATSTC,241,36,101,8
-    RTEXT           "Load addr:",IDC_STATIC,193,48,42,12
-    CONTROL         "Static",IDC_LOADADDR_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,48,60,12
-    RTEXT           "Init addr:",IDC_STATIC,193,60,42,12
-    CONTROL         "Static",IDC_INITADDR_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,60,60,12
-    RTEXT           "Play addr:",IDC_STATIC,193,72,42,12
-    CONTROL         "Static",IDC_PLAYADDR_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,72,60,12
-    RTEXT           "Subsongs:",IDC_STATIC,193,84,42,12
-    CONTROL         "Static",IDC_SUBSONGS_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,84,60,12
-    RTEXT           "SID model:",IDC_STATIC,193,96,42,12
-    CONTROL         "Static",IDC_SIDMODEL_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,96,60,12
-    RTEXT           "Clock speed:",IDC_STATIC,193,108,42,12
-    CONTROL         "Static",IDC_CLOCKSPEED_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,108,60,12
-    RTEXT           "File length:",IDC_STATIC,193,120,42,12
-    CONTROL         "Static",IDC_FILELENGTH_STC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,120,60,9
-    RTEXT           "SID2 Addr:",IDC_STATIC,193,132,42,8
-    CONTROL         "Static",IDC_SID2_ADDR,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,132,60,9
-    RTEXT           "SID3 Addr:",IDC_STATIC,193,145,42,8
-    CONTROL         "Static",IDC_SID3_ADDR,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,241,144,60,9
-    GROUPBOX        "STIL info",IDC_STATIC,7,156,340,87
-    EDITTEXT        IDC_STIL_ED,16,174,330,60,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
-    DEFPUSHBUTTON   "OK",IDOK,154,246,50,14
-END
+#endif
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -189,25 +223,17 @@ BEGIN
     IDD_CONFIG_DLG, DIALOG
     BEGIN
         LEFTMARGIN, 7
+        RIGHTMARGIN, 269
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 272
+    END
+
+    "IDD_CONFIG_DLG$(ORIGINAL)", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
         RIGHTMARGIN, 293
         TOPMARGIN, 7
         BOTTOMMARGIN, 346
-    END
-
-    IDD_ABOUTDLG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 188
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 138
-    END
-
-    IDD_FILEINFODLG, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 346
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 260
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -219,8 +245,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,1,5,0
- PRODUCTVERSION 2,1,5,0
+ FILEVERSION 2,1,5,7
+ PRODUCTVERSION 2,1,5,7
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -235,20 +261,37 @@ BEGIN
     BEGIN
         BLOCK "080004b0"
         BEGIN
-            VALUE "CompanyName", "WACUP (WinAmp Community Update Pack)"
+            VALUE "CompanyName", "WACUP (WinAmp Community Update Project)"
             VALUE "FileDescription", "Winamp Input Plug-in"
-            VALUE "FileVersion", "2.1.5.0"
+            VALUE "FileVersion", "2, 1, 5, 7"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2018 Zbigniew Ross (Licensed under GNU GPL), WACUP modifications by Darren Owen aka DrO © 2018"
+            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2019"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.1.5.0"
+            VALUE "ProductVersion", "2, 1, 5, 7"
         END
     END
     BLOCK "VarFileInfo"
     BEGIN
         VALUE "Translation", 0x800, 1200
     END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    65535                   "{5DF925A4-2095-460a-9394-155378C9D18B}"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_PLUGIN_NAME         "SID Player"
+    IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music and makes use of libsidplayfp (v2.0.0a) and reSID-fp for the playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
 END
 
 #endif    // English (U.K.) resources

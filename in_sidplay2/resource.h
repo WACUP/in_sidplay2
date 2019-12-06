@@ -2,10 +2,11 @@
 // Microsoft Visual C++ generated include file.
 // Used by in_sidplay2.rc
 //
+#define IDS_PLUGIN_NAME                 1
+#define IDS_ABOUT_STRING                2
 #define IDD_CONFIG_DLG                  101
-#define IDD_ABOUTDLG                    102
-#define IDD_FILEINFODLG                 104
-#define IDC_ABOUTED                     1001
+#define IDD_INFO                        105
+#define IDC_LIST                        1001
 #define IDC_FREQUENCY                   1002
 #define IDC_C64MODEL                    1003
 #define IDC_CHANNELS                    1005
@@ -26,7 +27,6 @@
 #define IDC_CLOCKSPEED_STC              1023
 #define IDC_BROWSE_BTN                  1024
 #define IDC_FILELENGTH_STC              1024
-#define IDC_FILEPATHNAME                1025
 #define IDC_ENABLESTIL                  1025
 #define IDC_HVSCDIR                     1026
 #define IDC_SID2_ADDR                   1026
