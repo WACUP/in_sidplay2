@@ -25,7 +25,7 @@
 #include <vector>
 #include <strsafe.h>
 
-#define PLUGIN_VERSION L"2.1.5.7"
+#define PLUGIN_VERSION L"2.1.5.9"
 
 // TODO
 // {5DF925A4-2095-460a-9394-155378C9D18B}
@@ -356,14 +356,18 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	wchar_t* foundChar;
 	bool firstSong = true;
 
+	createsidplayer();
+
+	if (gMutex != NULL)
+	{
 	WaitForSingleObject(gMutex, INFINITE);
+	}
+
 	if (gUpdaterThreadHandle != 0)
 	{
 		CloseHandle(gUpdaterThreadHandle);
 		gUpdaterThreadHandle = 0;
 	}
-
-	createsidplayer();
 
 	if (!filename || !filename[0])
 	{
@@ -675,7 +679,7 @@ extern "C" __declspec(dllexport) int winampUninstallPlugin(HINSTANCE hDllInst, H
 	// prompt to remove our settings with default as no (just incase)
 	/*if (MessageBox( hwndDlg, WASABI_API_LNGSTRINGW( IDS_UNINSTALL_SETTINGS_PROMPT ),
 				    pluginTitle, MB_YESNO | MB_DEFBUTTON2 ) == IDYES ) {
-		WritePrivateProfileString(CONFIG_APP_NAME, 0, 0, GetPaths()->plugin_ini_file);
+		SaveNativeIniString(PLUGIN_INI, CONFIG_APP_NAME, 0, 0);
 	}*/
 
 	// as we're not hooking anything and have no settings we can support an on-the-fly uninstall action
@@ -765,7 +769,11 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	int subsongIndex = 1;
 	//bool firstSong = true;
 
+	if (gMutex != NULL)
+	{
 	WaitForSingleObject(gMutex, INFINITE);
+	}
+
 	if (gUpdaterThreadHandle != 0)
 	{
 		CloseHandle(gUpdaterThreadHandle);

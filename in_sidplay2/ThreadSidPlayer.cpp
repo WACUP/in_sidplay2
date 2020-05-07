@@ -77,7 +77,6 @@ void CThreadSidPlayer::Init(void)
 
 void CThreadSidPlayer::Play(void)
 {
-
 	if(m_playerStatus == SP_RUNNING) return;
 	if(m_playerStatus == SP_PAUSED) 
 	{
@@ -90,9 +89,14 @@ void CThreadSidPlayer::Play(void)
 	if(m_playerStatus == SP_STOPPED)
 	{
 		int numChann = (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1;
-		maxLantency = m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,numChann, PLAYBACK_BIT_PRECISION,-1,-1);
+		maxLantency = (m_inmod->outMod ? m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,numChann, PLAYBACK_BIT_PRECISION, -1, -1) : -1);
+		if (maxLantency < 0)
+		{
+			return;
+		}
 
-		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann)/1000, m_playerConfig.sidConfig.frequency /1000,numChann,1);
+		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann) / 1000,
+						  m_playerConfig.sidConfig.frequency / 1000, numChann, 1);
 		//visualization init
 		m_inmod->SAVSAInit(maxLantency,m_playerConfig.sidConfig.frequency);
 		m_inmod->VSASetInfo(m_playerConfig.sidConfig.frequency,numChann);
@@ -124,6 +128,7 @@ void CThreadSidPlayer::Stop(void)
 	}
 	m_engine->stop();
 	CloseHandle(m_threadHandle);
+	m_threadHandle = NULL;
 	// close output system
 
 	if(m_inmod->outMod != NULL) m_inmod->outMod->Close();	

@@ -104,6 +104,7 @@ void CThreadSidDecoder::Stop(void)
 	}
 	m_engine->stop();
 	CloseHandle(m_threadHandle);
+	m_threadHandle = NULL;
 }
 
 void CThreadSidDecoder::LoadTune(const char* name)

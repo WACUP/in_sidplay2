@@ -13,13 +13,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Polish resources
+// Polish (Poland) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_PLK)
-#ifdef _WIN32
 LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
 #pragma code_page(1250)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -46,18 +44,16 @@ END
 
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Polish resources
+#endif    // Polish (Poland) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
+// English (United Kingdom) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -245,8 +241,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,1,5,7
- PRODUCTVERSION 2,1,5,7
+ FILEVERSION 2,1,5,9
+ PRODUCTVERSION 2,1,5,9
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -263,12 +259,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP (WinAmp Community Update Project)"
             VALUE "FileDescription", "Winamp Input Plug-in"
-            VALUE "FileVersion", "2, 1, 5, 7"
+            VALUE "FileVersion", "2.1.5.9"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2019"
+            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2020"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2, 1, 5, 7"
+            VALUE "ProductVersion", "2.1.5.9"
         END
     END
     BLOCK "VarFileInfo"
@@ -294,7 +290,7 @@ BEGIN
     IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music and makes use of libsidplayfp (v2.0.0a) and reSID-fp for the playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
 END
 
-#endif    // English (U.K.) resources
+#endif    // English (United Kingdom) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
