@@ -25,7 +25,7 @@
 #include <vector>
 #include <strsafe.h>
 
-#define PLUGIN_VERSION L"2.1.5.9"
+#define PLUGIN_VERSION L"2.1.5.10"
 
 // TODO
 // {5DF925A4-2095-460a-9394-155378C9D18B}
@@ -534,7 +534,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		plfilename = (wchar_t*)SendMessage(inmod.hMainWindow,WM_WA_IPC,i,IPC_GETPLAYLISTFILEW);
 		if (!plfilename || (plfilename[0] != '{')) continue;
 		foundChar = wcschr(plfilename,L'}');
-		if (wcscmp(foundChar+1,filename) == 0)
+		if (_wcsicmp(foundChar+1,filename) == 0)
 		{
 			//subtunes were added no point to do it again
 			ReleaseMutex(gMutex);
@@ -548,7 +548,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	{
 		plfilename = (wchar_t*)SendMessage(inmod.hMainWindow,WM_WA_IPC,i,IPC_GETPLAYLISTFILEW);
 		if (!plfilename) continue;
-		if (wcscmp(plfilename,filename) == 0)
+		if (_wcsicmp(plfilename,filename) == 0)
 		{
 			foundindex = i;
 			break;
@@ -560,15 +560,20 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	threadParams->foundIndex = foundindex;
 	threadParams->numSubsongs = info->songs();
 	threadParams->startSong = info->startSong();
-	strncpy(threadParams->fileName, AutoCharFn(filename), 512);
-	gUpdaterThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AddSubsongsThreadProc, (void*)threadParams, 0, NULL);
+	strncpy(threadParams->fileName, AutoCharFn(filename), ARRAYSIZE(threadParams->fileName));
+	//gUpdaterThreadHandle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AddSubsongsThreadProc, (void*)threadParams, 0, NULL);
+	AddSubsongsThreadProc((void*)threadParams);
+
 	ReleaseMutex(gMutex);
 	return;
 }
 
 DWORD WINAPI AddSubsongsThreadProc(void* params)
 {
+	/*if (gMutex != NULL)
+	{
 	WaitForSingleObject(gMutex, INFINITE);
+	}*/
 
 	tAddSubsongParams* threadParams = reinterpret_cast<tAddSubsongParams*>(params);
 	fileinfo *fi = new fileinfo;
@@ -591,7 +596,7 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 		}
 
 		++foundindex;
-		StringCchPrintfA(buf, 20, "{%d}", i);
+				StringCchPrintfA(buf, ARRAYSIZE(buf), "{%d}", i);
 		strFilename.assign(buf);
 		strFilename.append(threadParams->fileName);
 		ZeroMemory(fi, sizeof(fileinfo));
@@ -610,7 +615,7 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 	}
 	delete threadParams;
 
-	ReleaseMutex(gMutex);
+	//ReleaseMutex(gMutex);
 	return 0;
 }
 
