@@ -214,7 +214,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_CONFIG_DLG, DIALOG
     BEGIN
@@ -241,8 +241,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,1,5,10
- PRODUCTVERSION 2,1,5,10
+ FILEVERSION 2,2,0,0
+ PRODUCTVERSION 2,2,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -259,12 +259,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP (WinAmp Community Update Project)"
             VALUE "FileDescription", "Winamp Input Plug-in"
-            VALUE "FileVersion", "2.1.5.10"
+            VALUE "FileVersion", "2.2.0.0"
             VALUE "InternalName", "in_sidplay2.dll"
             VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2020"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.1.5.10"
+            VALUE "ProductVersion", "2.2.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -279,12 +279,12 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     65535                   "{5DF925A4-2095-460a-9394-155378C9D18B}"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_PLUGIN_NAME         "SID Player"
     IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music and makes use of libsidplayfp (v2.0.0a) and reSID-fp for the playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"

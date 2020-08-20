@@ -9,7 +9,7 @@ CThreadSidPlayer::CThreadSidPlayer(In_Module& inWAmod): m_tune(0), m_threadHandl
 {
 	m_inmod = &inWAmod;
 	m_decodeBuf = NULL;
-	m_decodeBufLen =0;
+	m_decodeBufLen = 0;
 	m_playerStatus = SP_STOPPED;
 	m_playerConfig.playLimitEnabled = false;
 	m_playerConfig.playLimitSec = 120;
@@ -242,7 +242,7 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 			}
 		//no song length, and no length limit so play for infinity
 	}
-	
+
 	return 0;
 }
 
@@ -291,7 +291,7 @@ bool CThreadSidPlayer::LoadConfigFromFile(PlayerConfig *conf)
 	int pos;
 	FILE *cfgFile;
 
-	if (fileName[0])
+	if (!fileName[0])
 	{
 		// use the settings path so we can have a portable wacup install no matter what :)
 		PathCombine(fileName, GetPaths()->settings_dir, L"Plugins\\in_sidplay2.ini");
@@ -341,48 +341,49 @@ void CThreadSidPlayer::ReadLine(char* buf,FILE *file,const int maxBuf)
 
 void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 {
-	if(plconf == NULL) return;
-
-	static wchar_t fileName[MAX_PATH];
-	if (fileName[0])
+	if(plconf != NULL)
 	{
-		// use the settings path so we can have a portable wacup install no matter what :)
-		PathCombine(fileName, GetPaths()->settings_dir, L"Plugins\\in_sidplay2.ini");
-}
-
-	SidConfig* conf = &plconf->sidConfig;
-	ofstream outFile(fileName);
-	outFile << "PlayFrequency=" << conf->frequency << endl;
-	outFile << "PlayChannels=" << ((conf->playback == SidConfig::MONO) ? 1 : 2) << endl;
-	outFile << "C64Model=" << conf->defaultC64Model << endl;
-	outFile << "C64ModelForced=" << conf->forceC64Model << endl;
-	outFile << "SidModel=" << conf->defaultSidModel << endl;
-	outFile << "SidModelForced=" << conf->forceSidModel << endl;
-	outFile << "Sid2ModelForced=" << conf->forceSecondSidModel << endl;
-	
-	outFile<<"PlayLimitEnabled="<<plconf->playLimitEnabled<<endl;
-	outFile<<"PlayLimitTime="<<plconf->playLimitSec<<endl;
-	outFile<<"UseSongLengthFile="<<plconf->useSongLengthFile<<endl;
-	if((!plconf->useSongLengthFile)||(plconf->songLengthsFile == NULL)) outFile<<"SongLengthsFile="<<""<<endl;
-	else outFile<<"SongLengthsFile="<<plconf->songLengthsFile<<endl;
-	outFile<<"UseSTILFile="<<plconf->useSTILfile<<endl;
-	if(plconf->hvscDirectory == NULL) plconf->useSTILfile = false;
-	if(!plconf->useSTILfile) outFile<<"HVSCDir="<<""<<endl;
-	else outFile<<"HVSCDir="<<plconf->hvscDirectory<<endl;
-	outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
-
-	outFile << "VoiceConfig=";
-	for (int sid = 0; sid < 3; ++sid)
-	{
-		for (int voice = 0; voice < 3; ++voice)
+		static wchar_t fileName[MAX_PATH];
+		if (!fileName[0])
 		{
-			outFile << plconf->voiceConfig[sid][voice];
+			// use the settings path so we can have a portable wacup install no matter what :)
+			PathCombine(fileName, GetPaths()->settings_dir, L"Plugins\\in_sidplay2.ini");
 		}
+
+		SidConfig* conf = &plconf->sidConfig;
+		ofstream outFile(fileName);
+		outFile << "PlayFrequency=" << conf->frequency << endl;
+		outFile << "PlayChannels=" << ((conf->playback == SidConfig::MONO) ? 1 : 2) << endl;
+		outFile << "C64Model=" << conf->defaultC64Model << endl;
+		outFile << "C64ModelForced=" << conf->forceC64Model << endl;
+		outFile << "SidModel=" << conf->defaultSidModel << endl;
+		outFile << "SidModelForced=" << conf->forceSidModel << endl;
+		outFile << "Sid2ModelForced=" << conf->forceSecondSidModel << endl;
+	
+		outFile<<"PlayLimitEnabled="<<plconf->playLimitEnabled<<endl;
+		outFile<<"PlayLimitTime="<<plconf->playLimitSec<<endl;
+		outFile<<"UseSongLengthFile="<<plconf->useSongLengthFile<<endl;
+		if((!plconf->useSongLengthFile)||(plconf->songLengthsFile == NULL)) outFile<<"SongLengthsFile="<<""<<endl;
+		else outFile<<"SongLengthsFile="<<plconf->songLengthsFile<<endl;
+		outFile<<"UseSTILFile="<<plconf->useSTILfile<<endl;
+		if(plconf->hvscDirectory == NULL) plconf->useSTILfile = false;
+		if(!plconf->useSTILfile) outFile<<"HVSCDir="<<""<<endl;
+		else outFile<<"HVSCDir="<<plconf->hvscDirectory<<endl;
+		outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
+
+		outFile << "VoiceConfig=";
+		for (int sid = 0; sid < 3; ++sid)
+		{
+			for (int voice = 0; voice < 3; ++voice)
+			{
+				outFile << plconf->voiceConfig[sid][voice];
+			}
+		}
+		outFile << endl;
+		outFile << "PseudoStereo=" << plconf->pseudoStereo << endl;
+		outFile << "Sid2Model=" << plconf->sid2Model << endl;
+		outFile.close();
 	}
-	outFile << endl;
-	outFile << "PseudoStereo=" << plconf->pseudoStereo << endl;
-	outFile << "Sid2Model=" << plconf->sid2Model << endl;
-	outFile.close();
 }
 
 void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, string value)

@@ -200,6 +200,7 @@
     <ClInclude Include="..\src\SidInfoImpl.h" />
     <ClInclude Include="..\src\sidmd5.h" />
     <ClInclude Include="..\src\sidmemory.h" />
+    <ClInclude Include="..\src\sidplayfp\pstdint.h" />
     <ClInclude Include="..\src\sidplayfp\sidbuilder.h" />
     <ClInclude Include="..\src\sidplayfp\SidConfig.h" />
     <ClInclude Include="..\src\sidplayfp\siddefs.h" />
@@ -207,6 +208,7 @@
     <ClInclude Include="..\src\sidplayfp\sidplayfp.h" />
     <ClInclude Include="..\src\sidplayfp\SidTune.h" />
     <ClInclude Include="..\src\sidplayfp\SidTuneInfo.h" />
+    <ClInclude Include="..\src\sidplayfp\sidversion.h" />
     <ClInclude Include="..\src\sidtune\MUS.h" />
     <ClInclude Include="..\src\sidtune\p00.h" />
     <ClInclude Include="..\src\sidtune\prg.h" />

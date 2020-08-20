@@ -252,7 +252,7 @@ bool CThreadSidDecoder::LoadConfigFromFile(PlayerConfig *conf)
 	int pos;
 	FILE *cfgFile;
 
-	if (fileName[0])
+	if (!fileName[0])
 	{
 		// use the settings path so we can have a portable wacup install no matter what :)
 		PathCombine(fileName, GetPaths()->settings_dir, L"Plugins\\in_sidplay2.ini");
