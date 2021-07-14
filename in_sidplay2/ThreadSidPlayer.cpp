@@ -4,6 +4,7 @@
 #include "SidInfoImpl.h"
 #include "c64roms.h"
 #include <loader/loader/paths.h>
+#include <loader/loader/utils.h>
 
 CThreadSidPlayer::CThreadSidPlayer(In_Module& inWAmod): m_tune(0), m_threadHandle(0)
 {
@@ -121,7 +122,14 @@ void CThreadSidPlayer::Pause(void)
 void CThreadSidPlayer::Stop(void)
 {
 	if(m_playerStatus == SP_STOPPED) return;
+
+	const bool paused = (m_playerStatus == SP_PAUSED);
 	m_playerStatus = SP_STOPPED; //to powinno zatrzymaæ w¹tek
+	if (paused)
+	{
+		ResumeThread(m_threadHandle);
+	}
+
 	if(WaitForSingleObject(m_threadHandle,3000) == WAIT_TIMEOUT)
 	{
 		TerminateThread(m_threadHandle,0);
@@ -641,8 +649,7 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 	//open song length database
 	if((m_playerConfig.useSongLengthFile) && (m_playerConfig.songLengthsFile != NULL))
 	{
-		bool openRes = m_sidDatabase.open(m_playerConfig.songLengthsFile);
-		if(openRes != 0) MessageBoxA(NULL,"Error opening songlength database.\r\nDisable songlength databse or choose other file","in_sidplay2",MB_OK);
+		if(!m_sidDatabase.open(m_playerConfig.songLengthsFile)) TimedMessageBox(NULL,L"Error opening songlength database.\r\nDisable songlength databse or choose other file",L"in_sidious",MB_OK,3000);
 	}
 	//open STIL file
 	if((m_playerConfig.useSTILfile) && (m_playerConfig.hvscDirectory != NULL))
@@ -663,7 +670,18 @@ int CThreadSidPlayer::GetSongLength(SidTune &tune)
 		return -1;
 	}
 
-	length = m_sidDatabase.length(tune);
+	// attempt to use songlengths.md5 first before
+	// attempting a songlengths.txt compatible set
+	length = m_sidDatabase.lengthMs(tune);
+	if (length <= 0)
+	{
+		length = m_sidDatabase.length(tune);
+		if (length > 0)
+		{
+			length *= 1000;
+		}
+	}
+
 	if ((m_playerConfig.playLimitEnabled) && (length <= 0))
 	{
 		length = m_playerConfig.playLimitSec;
@@ -752,7 +770,7 @@ void CThreadSidPlayer::FillSTILData()
 	f = fopen(buf, "rb+");
 	if (f == NULL)
 	{
-		MessageBoxA(NULL, "Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", "in_sidplay2", MB_OK);
+		TimedMessageBox(NULL, L"Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", L"in_sidious", MB_OK, 3000);
 		return;
 	}
 	while (feof(f) == 0)
@@ -800,7 +818,7 @@ void CThreadSidPlayer::FillSTILData2()
 	f = fopen(buf, "rb+");
 	if (f == NULL)
 	{
-		MessageBoxA(NULL, "Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", "in_sidplay2", MB_OK);
+		TimedMessageBox(NULL, L"Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", L"in_sidious", MB_OK, 3000);
 		return;
 	}
 	while (feof(f) == 0)

@@ -97,7 +97,14 @@ void CThreadSidDecoder::Play(void)
 void CThreadSidDecoder::Stop(void)
 {
 	if(m_playerStatus == SP_STOPPED) return;
+
+	const bool paused = (m_playerStatus == SP_PAUSED);
 	m_playerStatus = SP_STOPPED; //to powinno zatrzymaæ w¹tek
+	if (paused)
+	{
+		ResumeThread(m_threadHandle);
+	}
+
 	if(WaitForSingleObject(m_threadHandle,3000) == WAIT_TIMEOUT)
 	{
 		TerminateThread(m_threadHandle,0);

@@ -219,24 +219,20 @@ void UpdateConfig(HWND hWnd)
 
 void SelectHvscFile(HWND hWnd)
 {
-	wchar_t path[MAX_PATH];
+	wchar_t path[MAX_PATH] = { 0 };
 	size_t pathLen;
 
-
-	if(GetFileNameFromBrowse(hWnd,path,MAX_PATH,L"c:\\",L"txt",L"Text files (*.txt)\0*.txt\0All files (*.*)\0*.*\0\0",
-		L"Select song length db file") != TRUE) return;
+	if(GetFileNameFromBrowse(hWnd,path,MAX_PATH,L"c:\\",L"md5",L"Text files (*.md5,*.txt)\0*.md5;*.txt\0All files (*.*)\0*.*\0\0",
+							 L"Select song length db file") != TRUE) return;
 	if(playerConfig->songLengthsFile != NULL) delete[] playerConfig->songLengthsFile;
 	pathLen = wcslen(path)+1;
 	playerConfig->songLengthsFile = new char[pathLen];
 	wcstombs(playerConfig->songLengthsFile,path,pathLen);
 	SetDlgItemTextA(hWnd,IDC_SONGLENGTHFILE,playerConfig->songLengthsFile);
-
 }
 
 void SelectHvscDirectory(HWND hWnd)
 {
-	LPITEMIDLIST idlRoot = NULL;
-
     BROWSEINFO bi = { 0 };
 
     bi.lpszTitle = L"Select HVSC directory";
@@ -246,14 +242,8 @@ void SelectHvscDirectory(HWND hWnd)
     {
         // get the name of the folder and put it in path
 		wchar_t path[MAX_PATH] = {0};
-        SHGetPathFromIDList ( pidl, path );
-        IMalloc * imalloc = 0;
-        if ( SUCCEEDED( SHGetMalloc ( &imalloc )) )
-        {
-            imalloc->Free(pidl);
-            imalloc->Release ( );
-        }
-    
+		SHGetPathFromIDList ( pidl, path );
+		CoTaskMemFree( pidl );
 		if(playerConfig->hvscDirectory != NULL) delete[] playerConfig->hvscDirectory;
 		size_t pathLen = wcslen(path)+1;
 		playerConfig->hvscDirectory = new char[pathLen];

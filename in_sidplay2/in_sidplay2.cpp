@@ -25,7 +25,7 @@
 #include <vector>
 #include <strsafe.h>
 
-#define PLUGIN_VERSION L"2.2"
+#define PLUGIN_VERSION L"2.2.8"
 
 // TODO
 // {5DF925A4-2095-460a-9394-155378C9D18B}
@@ -61,7 +61,7 @@ void config(HWND hwndParent)
 
 void about(HWND hwndParent)
 {
-	wchar_t message[1024] = {0}, title[256] = {0};
+	wchar_t message[1024] = { 0 }, title[256] = { 0 };
 	StringCchPrintf(message, 1024, WASABI_API_LNGSTRINGW(IDS_ABOUT_STRING),
 					WASABI_API_LNGSTRINGW_BUF(IDS_PLUGIN_NAME, title, 256),
 					PLUGIN_VERSION, TEXT(__DATE__));
@@ -407,7 +407,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		}
 
 		length = sidPlayer->GetSongLength();
-		if (length == -1)
+		if (length < 0)
 		{
 			//ReleaseMutex(gMutex);
 			return;
@@ -450,7 +450,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		//tune.selectSong(info.startSong);
 		tune.selectSong(subsongIndex);
 		length = sidPlayer->GetSongLength(tune);
-		if (length == -1)
+		if (length < 0)
 		{
 			//ReleaseMutex(gMutex);
 			return;
@@ -551,7 +551,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	}
 
 	//we have subsongs...
-	/*plLength = (int)SendMessage(inmod.hMainWindow,WM_WA_IPC,0,IPC_GETLISTLENGTH);
+	/*plLength = (int)GetPlaylistLength();
 	//check if we have already added subsongs
 	for (i=0; i<plLength;++i)
 	{
@@ -685,7 +685,8 @@ extern In_Module inmod =
 
 	0,			// out_mod filled in by winamp
 	NULL,       // api_service
-	GetFileExtensions	// loading optimisation
+	GetFileExtensions,	// loading optimisation
+	IN_INIT_WACUP_END_STRUCT
 };
 
 void GetFileExtensions(void)
@@ -737,8 +738,6 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 	if (n == 0)
 	{
 		// add first pane
-		SetPropW(parent, L"INBUILT_NOWRITEINFO", (HANDLE)1);
-
 		const SidTuneInfo* info;
 		SidTune tune(0);
 		int i;
@@ -754,6 +753,8 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 		info = tune.getInfo();
 		if (info)
 		{
+			SetProp(parent, L"INBUILT_NOWRITEINFO", (HANDLE)1);
+
 			// TODO localise
 			wcsncpy(name, L"STIL Information", namelen);
 			return WASABI_API_CREATEDIALOGPARAMW(IDD_INFO, parent, InfoDlgWndProc, (LPARAM)info);
@@ -766,7 +767,8 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 {
 	int retval = 0;
 
-	if (!_stricmp(metadata, "type"))
+	if (!_stricmp(metadata, "type") ||
+		!_stricmp(metadata, "streammetadata"))
 	{
 		ret[0] = '0';
 		ret[1] = 0;
@@ -825,7 +827,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		}
 
 		length = sidPlayer->GetSongLength();
-		if (length == -1)
+		if (length < 0)
 		{
 			//ReleaseMutex(gMutex);
 			return 0;
@@ -868,7 +870,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		//tune.selectSong(info.startSong);
 		tune.selectSong(subsongIndex);
 		length = sidPlayer->GetSongLength(tune);
-		if (length == -1)
+		if (length < 0)
 		{
 			//ReleaseMutex(gMutex);
 			return 0;
@@ -886,7 +888,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	// even if no file, return a 1 and write "0"
 	if (!_stricmp(metadata, "length"))
 	{
-		length *= 1000;
 		if (length <= 0)
 		{
 			length = -1000;

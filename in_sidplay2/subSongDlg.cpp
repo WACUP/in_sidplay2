@@ -69,7 +69,7 @@ void CSubSongDlg::Hide()
 
 void CSubSongDlg::Show()
 {
-	ShowWindow(m_hWnd,SW_SHOW);
+	ShowWindow(m_hWnd, SW_SHOWNA);
 }
 
 void CSubSongDlg::RefreshWindowTitle()

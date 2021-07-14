@@ -103,7 +103,7 @@ BEGIN
                     "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,13,192,70,18
     EDITTEXT        IDC_SONGLENGTHFILE,88,195,132,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Browse...",IDC_BROWSE_BTN,220,194,44,14
-    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.txt)",IDC_STATIC,23,210,241,8
+    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.md5)",IDC_STATIC,23,210,241,8
     CONTROL         "Use STIL (from the HVSC folder)",IDC_ENABLESTIL,"Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,13,224,70,18
     EDITTEXT        IDC_HVSCDIR,88,224,132,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Browse....",IDC_BROWSE_HVSC,220,223,44,15
@@ -197,7 +197,7 @@ BEGIN
     CONTROL         "Use song length database",IDC_ENABLESONGLENDB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,273,96,8
     EDITTEXT        IDC_SONGLENGTHFILE,103,273,132,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Browse",IDC_BROWSE_BTN,241,271,30,18
-    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.txt)",IDC_STATIC,19,287,180,8
+    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.md5)",IDC_STATIC,19,287,180,8
     CONTROL         "Use STIL - HVSC directory",IDC_ENABLESTIL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,301,96,12
     EDITTEXT        IDC_HVSCDIR,103,301,132,12,ES_AUTOHSCROLL | ES_READONLY
     PUSHBUTTON      "Browse",IDC_BROWSE_HVSC,241,297,30,18
@@ -241,8 +241,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,0,0
- PRODUCTVERSION 2,2,0,0
+ FILEVERSION 2,2,8,0
+ PRODUCTVERSION 2,2,8,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -259,12 +259,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP (WinAmp Community Update Project)"
             VALUE "FileDescription", "Winamp Input Plug-in"
-            VALUE "FileVersion", "2.2.0.0"
+            VALUE "FileVersion", "2.2.8.0"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2020"
+            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2021"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.2.0.0"
+            VALUE "ProductVersion", "2.2.8.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -287,7 +287,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_PLUGIN_NAME         "SID Player"
-    IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music and makes use of libsidplayfp (v2.0.0a) and reSID-fp for the playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
+    IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music &\nmakes use of libsidplayfp (v%s) &\nreSID-fp for its playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
 END
 
 #endif    // English (United Kingdom) resources
