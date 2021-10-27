@@ -25,7 +25,7 @@
 #include <vector>
 #include <strsafe.h>
 
-#define PLUGIN_VERSION L"2.2.8"
+#define PLUGIN_VERSION L"2.2.10"
 
 // TODO
 // {5DF925A4-2095-460a-9394-155378C9D18B}
@@ -64,7 +64,7 @@ void about(HWND hwndParent)
 	wchar_t message[1024] = { 0 }, title[256] = { 0 };
 	StringCchPrintf(message, 1024, WASABI_API_LNGSTRINGW(IDS_ABOUT_STRING),
 					WASABI_API_LNGSTRINGW_BUF(IDS_PLUGIN_NAME, title, 256),
-					PLUGIN_VERSION, TEXT(__DATE__));
+					PLUGIN_VERSION, TEXT(__DATE__), L"2.1.2 - 19 Apr 2021");
 	AboutMessageBox(hwndParent, message, title);
 }
 
@@ -155,8 +155,6 @@ int play(const in_char *fn)
 			return -1;
 		}
 		sidPlayer->PlaySubtune(tuneInfo->startSong());
-		// m_tune.getInfo()->startSong();
-		//sidPlayer->PlaySubtune(subsongIndex);
 	}
 
 	return 0; 
@@ -346,14 +344,14 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 	SidTune tune(0);
 	tune.load(AutoCharFn(filename));
 
-	const SidTuneInfo* info = tune.getInfo();
-	if (info == NULL)
+	const SidTuneInfo* tuneInfo = tune.getInfo();
+	if (tuneInfo == NULL)
 	{
 		//ReleaseMutex(gMutex);
 		return 0;
 	}
 
-	const int ret = info->songs();
+	const int ret = tuneInfo->songs();
 	//ReleaseMutex(gMutex);
 	return ret;
 }
@@ -367,7 +365,7 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 // if length_in_ms is NULL, no length is copied into it.
 void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 {
-	const SidTuneInfo* info = NULL;
+	const SidTuneInfo* tuneInfo = NULL;
 	std::string str;
 	std::string strFilename;
 	int length;
@@ -398,9 +396,9 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		//get current song info
 		if (sidPlayer != NULL)
 		{
-			info = sidPlayer->GetTuneInfo();
+			tuneInfo = sidPlayer->GetTuneInfo();
 		}
-		if (info == NULL)
+		if (tuneInfo == NULL)
 		{
 			//ReleaseMutex(gMutex);
 			return;
@@ -414,8 +412,8 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		}
 
 		//subsongIndex = info->currentSong();//.currentSong;
-		strFilename.assign(info->path());
-		strFilename.append(info->dataFileName());
+		strFilename.assign(tuneInfo->path());
+		strFilename.append(tuneInfo->dataFileName());
 		subsongIndex = sidPlayer->CurrentSubtune();
 	}
 	else
@@ -432,21 +430,26 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 			strFilename = strFilename.substr(i + 1);
 			//get info from other file if we got real name
 			tune.load(strFilename.c_str());
+			tuneInfo = tune.getInfo();
+			if (tuneInfo == NULL)
+			{
+				//ReleaseMutex(gMutex);
+				return;
+			}
 		}
 		else
 		{
 			tune.load(strFilename.c_str());
-			info = tune.getInfo();
-			if (info == NULL)
+			tuneInfo = tune.getInfo();
+			if (tuneInfo == NULL)
 			{
 				//ReleaseMutex(gMutex);
 				return;
 			}
 
-			subsongIndex = tune.getInfo()->startSong();
+			subsongIndex = tuneInfo->startSong();
 		}
 
-		info = tune.getInfo();
 		//tune.selectSong(info.startSong);
 		tune.selectSong(subsongIndex);
 		length = sidPlayer->GetSongLength(tune);
@@ -459,7 +462,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	
 	//check if we got correct tune info
 	//if (info.c64dataLen == 0) return;
-	if (info->c64dataLen() == 0)
+	if (tuneInfo->c64dataLen() == 0)
 	{
 		//ReleaseMutex(gMutex);
 		return;
@@ -505,13 +508,13 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 
 	//fill STIL data if necessary
 	const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
-	conditionsReplace(titleTemplate, sb, info);
+	conditionsReplace(titleTemplate, sb, tuneInfo);
 
 	replaceAll(titleTemplate, "%f", fileNameOnly.c_str());
-	replaceAll(titleTemplate, "%t", info->infoString(0));
-	replaceAll(titleTemplate, "%a", info->infoString(1));
-	replaceAll(titleTemplate, "%r", info->infoString(2));
-	if (info->songs() > 1) 
+	replaceAll(titleTemplate, "%t", tuneInfo->infoString(0));
+	replaceAll(titleTemplate, "%a", tuneInfo->infoString(1));
+	replaceAll(titleTemplate, "%r", tuneInfo->infoString(2));
+	if (tuneInfo->songs() > 1)
 	{
 		char buf[20] = {0};
 		StringCchPrintfA(buf,20,"%02d", subsongIndex);
@@ -794,7 +797,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 	createsidplayer();
 
-	const SidTuneInfo* info = NULL;
+	const SidTuneInfo* tuneInfo = NULL;
 	std::string str;
 	std::string strFilename;
 	int length;
@@ -818,9 +821,9 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		//get current song info
 		if (sidPlayer != NULL)
 		{
-			info = sidPlayer->GetTuneInfo();
+			tuneInfo = sidPlayer->GetTuneInfo();
 		}
-		if (info == NULL)
+		if (tuneInfo == NULL)
 		{
 			//ReleaseMutex(gMutex);
 			return 0;
@@ -834,8 +837,8 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		}
 
 		//subsongIndex = info->currentSong();//.currentSong;
-		strFilename.assign(info->path());
-		strFilename.append(info->dataFileName());
+		strFilename.assign(tuneInfo->path());
+		strFilename.append(tuneInfo->dataFileName());
 		subsongIndex = sidPlayer->CurrentSubtune();
 	}
 	else
@@ -852,21 +855,26 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			strFilename = strFilename.substr(i+1);
 			//get info from other file if we got real name
 			tune.load(strFilename.c_str());
+			tuneInfo = tune.getInfo();
+			if (tuneInfo == NULL)
+			{
+				//ReleaseMutex(gMutex);
+				return 0;
+			}
 		}
 		else
 		{
 			tune.load(strFilename.c_str());
-			info = tune.getInfo();
-			if (info == NULL)
+			tuneInfo = tune.getInfo();
+			if (tuneInfo == NULL)
 			{
 				//ReleaseMutex(gMutex);
 				return 0;
 			}
 
-			subsongIndex = tune.getInfo()->startSong();
+			subsongIndex = tuneInfo->startSong();
 		}
 
-		info = tune.getInfo();
 		//tune.selectSong(info.startSong);
 		tune.selectSong(subsongIndex);
 		length = sidPlayer->GetSongLength(tune);
@@ -879,7 +887,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	
 	//check if we got correct tune info
 	//if (info.c64dataLen == 0) return;
-	if (!info || info->c64dataLen() == 0)
+	if (!tuneInfo || tuneInfo->c64dataLen() == 0)
 	{
 		//ReleaseMutex(gMutex);
 		return 0;
@@ -908,7 +916,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", info->infoString(0));
+		StringCchPrintf(ret, retlen, L"%S", tuneInfo->infoString(0));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "artist"))
@@ -923,7 +931,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", info->infoString(1));
+		StringCchPrintf(ret, retlen, L"%S", tuneInfo->infoString(1));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "album"))
@@ -950,7 +958,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", info->commentString(0));
+		StringCchPrintf(ret, retlen, L"%S", tuneInfo->commentString(0));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "publisher"))
@@ -967,7 +975,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		// same string is used for both so we skip the
 		// first part to get to the publisher details
-		char *pub_str = (char *)info->infoString(2);
+		char *pub_str = (char *)tuneInfo->infoString(2);
 		if (pub_str && *pub_str)
 		{
 			while (pub_str && *pub_str != ' ')
@@ -991,7 +999,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	{
 		// same string is used for both so we ignore
 		// most of it & just attempt to get a number
-		char *year_str = (char *)info->infoString(2);
+		char *year_str = (char *)tuneInfo->infoString(2);
 		if (year_str && *year_str)
 		{
 			// copy up to the space into the buffer
@@ -1008,7 +1016,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	}
 	else if (!_stricmp(metadata, "track"))
 	{
-		if (info->songs() > 1) 
+		if (tuneInfo->songs() > 1)
 		{
 			_itow_s(subsongIndex, ret, retlen, 10);
 		}

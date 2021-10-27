@@ -124,7 +124,7 @@ void CThreadSidDecoder::LoadTune(const char* name)
 	{
 		return;
 	}
-	m_tune.selectSong(m_tune.getInfo()->startSong());
+	m_tune.selectSong(tuneInfo->startSong());
 
 	m_currentTuneLength = m_sidDatabase.length(m_tune);
 	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLength <= 0))
@@ -228,7 +228,10 @@ DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 int CThreadSidDecoder::CurrentSubtune(void)
 {
 	if(m_tune.getStatus()) 
-		return m_tune.getInfo()->currentSong();
+	{
+		const SidTuneInfo* tuneInfo = m_tune.getInfo();
+		return (tuneInfo ? tuneInfo->currentSong() : 0);
+	}
 	return 0;
 }
 
@@ -262,7 +265,7 @@ bool CThreadSidDecoder::LoadConfigFromFile(PlayerConfig *conf)
 	if (!fileName[0])
 	{
 		// use the settings path so we can have a portable wacup install no matter what :)
-		PathCombine(fileName, GetPaths()->settings_dir, L"Plugins\\in_sidplay2.ini");
+		PathCombine(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
 	}
 
 	cfgFile = _wfopen(fileName,L"rb");
@@ -563,7 +566,10 @@ void CThreadSidDecoder::DoSeek()
 		if (timesek == 0) return;
 		//seek time is less than current time - we have to rewind song
 
-		m_tune.selectSong(m_tune.getInfo()->currentSong());
+		const SidTuneInfo* tuneInfo = m_tune.getInfo();
+		if (tuneInfo == NULL) return;
+
+		m_tune.selectSong(tuneInfo->currentSong());
 		//m_currentTuneLength = m_sidDatabase.length(m_tune);//we know length of tune already
 		m_engine->stop();
 		m_engine->load(&m_tune);//timers are now 0
