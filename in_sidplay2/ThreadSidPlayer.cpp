@@ -5,6 +5,7 @@
 #include "c64roms.h"
 #include <loader/loader/paths.h>
 #include <loader/loader/utils.h>
+#include <Agave/Config/api_config.h>
 
 CThreadSidPlayer::CThreadSidPlayer(In_Module& inWAmod): m_tune(0), m_threadHandle(0)
 {
@@ -30,8 +31,8 @@ CThreadSidPlayer::CThreadSidPlayer(In_Module& inWAmod): m_tune(0), m_threadHandl
 
 	m_playerConfig.pseudoStereo = false;
 	m_playerConfig.sid2Model = SidConfig::sid_model_t::MOS6581;	
-	m_currentTuneLength = -1;
-	maxLantency =0;
+	m_currentTuneLengthMs = -1000;
+	maxLatency =0;
 	m_seekNeedMs = 0;
 	m_engine = new sidplayfp;
 }
@@ -89,23 +90,43 @@ void CThreadSidPlayer::Play(void)
 	//if stopped then create new thread to play
 	if(m_playerStatus == SP_STOPPED)
 	{
-		int numChann = (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1;
-		maxLantency = (m_inmod->outMod ? m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,numChann, PLAYBACK_BIT_PRECISION, -1, -1) : -1);
-		if (maxLantency < 0)
+		const int numChann = (!m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ? 
+							  (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
+
+		// for the playback state to match correctly with the wacup core playback
+		// config then we have to nudge everything otherwise stereo vs mono modes
+		// may not be correctly applied at the time that it's expected to be done
+		const SidConfig::playback_t playback = m_playerConfig.sidConfig.playback;
+		m_playerConfig.sidConfig.playback = (SidConfig::playback_t)numChann;
+		m_engine->config(m_playerConfig.sidConfig);
+		m_playerConfig.sidConfig.playback = playback;
+
+		maxLatency = (m_inmod->outMod ? m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,
+												  numChann, PLAYBACK_BIT_PRECISION, -1, -1) : -1);
+		if (maxLatency < 0)
 		{
 			return;
 		}
 
+		//visualization init
+		m_inmod->SAVSAInit(maxLatency,m_playerConfig.sidConfig.frequency);
+		m_inmod->VSASetInfo(m_playerConfig.sidConfig.frequency,numChann);
+
 		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann) / 1000,
 						  m_playerConfig.sidConfig.frequency / 1000, numChann, 1);
-		//visualization init
-		m_inmod->SAVSAInit(maxLantency,m_playerConfig.sidConfig.frequency);
-		m_inmod->VSASetInfo(m_playerConfig.sidConfig.frequency,numChann);
+
 		//default volume
 		m_inmod->outMod->SetVolume(-666); 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)CThreadSidPlayer::Run,this,0,NULL);
+		m_threadHandle = CreateThread(NULL,0,CThreadSidPlayer::Run,this,CREATE_SUSPENDED,NULL);
 		// TODO api_config & thread priority level
+		if (m_threadHandle)
+		{
+			SetThreadPriority(m_threadHandle, (int)m_inmod->config->
+							  GetInt(playbackConfigGroupGUID,
+							  L"priority", THREAD_PRIORITY_HIGHEST));
+			ResumeThread(m_threadHandle);
+		}
 	}
 }
 
@@ -139,7 +160,7 @@ void CThreadSidPlayer::Stop(void)
 	m_threadHandle = NULL;
 	// close output system
 
-	if(m_inmod->outMod != NULL) m_inmod->outMod->Close();	
+	if(m_inmod->outMod != NULL && m_inmod->outMod->Close != NULL) m_inmod->outMod->Close();
 	// deinitialize visualization
 	m_inmod->SAVSADeInit();
 }
@@ -156,10 +177,10 @@ void CThreadSidPlayer::LoadTune(const char* name)
 	}
 	m_tune.selectSong(tuneInfo->startSong());
 
-	m_currentTuneLength = m_sidDatabase.length(m_tune);
-	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLength <= 0))
+	m_currentTuneLengthMs = m_sidDatabase.lengthMs(m_tune);
+	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLengthMs <= 0))
 	{
-		m_currentTuneLength = m_playerConfig.playLimitSec;
+		m_currentTuneLengthMs = (m_playerConfig.playLimitSec * 1000);
 	}
 	m_engine->load(&m_tune);
 	//mute must be applied after SID's have been created
@@ -185,7 +206,8 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 	playerObj->m_decodedSampleCount = 0;
 	playerObj->m_playTimems = 0;
 	bps = PLAYBACK_BIT_PRECISION;//playerObj->m_playerConfig.sidConfig.precision;
-	numChn = (playerObj->m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1;
+	numChn = (!playerObj->m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
+			  (playerObj->m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
 	freq = playerObj->m_playerConfig.sidConfig.frequency;
 	desiredLen = 576 * (PLAYBACK_BIT_PRECISION >>3) * numChn * (playerObj->m_inmod->dsp_isactive()?2:1);
 
@@ -219,7 +241,7 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 			if(playerObj->m_seekNeedMs > 0) 
 				playerObj->DoSeek();
 			else
-				Sleep(20);
+				SleepEx(10, TRUE);
 		}
 
 		//int timeElapsed = playerObj->GetPlayTime();
@@ -227,15 +249,21 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 		int timeElapsed = playerObj->m_playTimems;
 		//if we konw the song length and timer just reached it then go to next song
 		
-		if(playerObj->GetSongLength() >= 1)
+		const int length = playerObj->GetSongLengthMs();
+		if(length >= 1)
 		{
-			if(playerObj->GetSongLength()*1000 < timeElapsed)
+			if(length < timeElapsed)
 			{
 				playerObj->m_playerStatus = SP_STOPPED;
-				PostMessage(playerObj->m_inmod->hMainWindow,WM_WA_MPEG_EOF,0,0);
+
+				while (playerObj->m_inmod->outMod->IsPlaying())
+				{
+					SleepEx(10, TRUE);
+				}
+
+				PostEOF();
 				return 0;
 			}
-			//Sleep(10);
 		}
 		else //if we dont know song length but time limit is enabled then check it
 			if(playerObj->m_playerConfig.playLimitEnabled) 
@@ -243,8 +271,13 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 				if((playerObj->m_playerConfig.playLimitSec*1000) < timeElapsed) 
 				{
 					playerObj->m_playerStatus = SP_STOPPED;
-					PostMessage(playerObj->m_inmod->hMainWindow,WM_WA_MPEG_EOF,0,0);
-					//Sleep(10);
+
+					while (playerObj->m_inmod->outMod->IsPlaying())
+					{
+						SleepEx(10, TRUE);
+					}
+
+					PostEOF();
 					return 0;
 				}
 			}
@@ -268,10 +301,10 @@ void CThreadSidPlayer::PlaySubtune(int subTune)
 {	
 	Stop();
 	m_tune.selectSong(subTune);	
-	m_currentTuneLength = m_sidDatabase.length(m_tune);
-	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLength <= 0))
+	m_currentTuneLengthMs = m_sidDatabase.lengthMs(m_tune);
+	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLengthMs <= 0))
 	{
-		m_currentTuneLength = m_playerConfig.playLimitSec;
+		m_currentTuneLengthMs = (m_playerConfig.playLimitSec * 1000);
 	}
 	m_engine->stop();
 	m_engine->load(&m_tune);
@@ -299,13 +332,12 @@ bool CThreadSidPlayer::LoadConfigFromFile(PlayerConfig *conf)
 	string sLine; 
 	string token;
 	string value;
-	int pos;
 	FILE *cfgFile;
 
 	if (!fileName[0])
 	{
 		// use the settings path so we can have a portable wacup install no matter what :)
-		PathCombine(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
+		CombinePath(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
 	}
 
 	cfgFile = _wfopen(fileName,L"rb");
@@ -317,7 +349,7 @@ bool CThreadSidPlayer::LoadConfigFromFile(PlayerConfig *conf)
 		ReadLine(cLine,cfgFile,maxLen);
 		if(strlen(cLine) == 0) continue;
 		sLine.assign(cLine);
-		pos = sLine.find("=");
+		const size_t pos = sLine.find("=");
 		token = sLine.substr(0,pos);
 		value = sLine.substr(pos+1);
 		if((token.length() ==0) || (value.length() ==0)) continue;
@@ -358,29 +390,91 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 		if (!fileName[0])
 		{
 			// use the settings path so we can have a portable wacup install no matter what :)
-			PathCombine(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
+			CombinePath(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
 		}
 
 		SidConfig* conf = &plconf->sidConfig;
 		ofstream outFile(fileName);
+		if (conf->frequency != 44100)
+		{
 		outFile << "PlayFrequency=" << conf->frequency << endl;
-		outFile << "PlayChannels=" << ((conf->playback == SidConfig::MONO) ? 1 : 2) << endl;
+		}
+
+		if (conf->playback == SidConfig::STEREO)
+		{
+			outFile << "PlayChannels=2" << endl;
+		}
+
+		if (conf->defaultC64Model)
+		{
 		outFile << "C64Model=" << conf->defaultC64Model << endl;
+		}
+
+
+		if (conf->forceC64Model)
+		{
 		outFile << "C64ModelForced=" << conf->forceC64Model << endl;
+		}
+
+		if (conf->defaultSidModel)
+		{
 		outFile << "SidModel=" << conf->defaultSidModel << endl;
+		}
+
+		if (conf->forceSidModel)
+		{
 		outFile << "SidModelForced=" << conf->forceSidModel << endl;
-		outFile << "Sid2ModelForced=" << conf->forceSecondSidModel << endl;
+		}
 	
+		//outFile << "Sid2ModelForced=" << conf->forceSecondSidModel << endl;
+
+		if (plconf->playLimitEnabled)
+		{
 		outFile<<"PlayLimitEnabled="<<plconf->playLimitEnabled<<endl;
+		}
+
+		if (plconf->playLimitSec != 120)
+		{
 		outFile<<"PlayLimitTime="<<plconf->playLimitSec<<endl;
+		}
+
+		if (plconf->useSongLengthFile)
+		{
 		outFile<<"UseSongLengthFile="<<plconf->useSongLengthFile<<endl;
-		if((!plconf->useSongLengthFile)||(plconf->songLengthsFile == NULL)) outFile<<"SongLengthsFile="<<""<<endl;
-		else outFile<<"SongLengthsFile="<<plconf->songLengthsFile<<endl;
+		}
+
+		if ((!plconf->useSongLengthFile) || (plconf->songLengthsFile == NULL))
+		{
+			//outFile << "SongLengthsFile=" << "" << endl;
+		}
+		else
+		{
+			outFile << "SongLengthsFile=" << plconf->songLengthsFile << endl;
+		}
+
+		if (plconf->useSTILfile)
+		{
 		outFile<<"UseSTILFile="<<plconf->useSTILfile<<endl;
-		if(plconf->hvscDirectory == NULL) plconf->useSTILfile = false;
-		if(!plconf->useSTILfile) outFile<<"HVSCDir="<<""<<endl;
-		else outFile<<"HVSCDir="<<plconf->hvscDirectory<<endl;
+		}
+
+		if (plconf->hvscDirectory == NULL)
+		{
+			plconf->useSTILfile = false;
+		}
+
+		if (!plconf->useSTILfile)
+		{
+			//outFile << "HVSCDir=" << "" << endl;
+		}
+		else
+		{
+			outFile << "HVSCDir=" << plconf->hvscDirectory << endl;
+		}
+
+		if (plconf->useSongLengthFile)
+		{
 		outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
+		}
 
 		outFile << "VoiceConfig=";
 		for (int sid = 0; sid < 3; ++sid)
@@ -391,8 +485,17 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 			}
 		}
 		outFile << endl;
+
+		if (plconf->pseudoStereo)
+		{
 		outFile << "PseudoStereo=" << plconf->pseudoStereo << endl;
+		}
+
+		if (plconf->sid2Model != SidConfig::sid_model_t::MOS6581)
+		{
 		outFile << "Sid2Model=" << plconf->sid2Model << endl;
+		}
+
 		outFile.close();
 	}
 }
@@ -638,7 +741,17 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 		m_playerConfig.sidConfig.secondSidModel = -1;
 	}
 	//m_playerConfig.sidConfig.
+
+	numChann = (!m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
+				(m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
+
+	// for the playback state to match correctly with the wacup core playback
+	// config then we have to nudge everything otherwise stereo vs mono modes
+	// may not be correctly applied at the time that it's expected to be done
+	const SidConfig::playback_t playback = m_playerConfig.sidConfig.playback;
+	m_playerConfig.sidConfig.playback = (SidConfig::playback_t)numChann;
 	m_engine->config(m_playerConfig.sidConfig);
+	m_playerConfig.sidConfig.playback = playback;
 
 
 	//kernal,basic,chargen
@@ -646,7 +759,6 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 
 	//create decode buf for 576 samples
 	if(m_decodeBufLen > 0) delete[] m_decodeBuf;
-	numChann = (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1;
 	m_decodeBufLen = 2 * 576 * (PLAYBACK_BIT_PRECISION >>3) * numChann;
 	m_decodeBuf = new char[m_decodeBufLen];
 	//open song length database
@@ -663,7 +775,7 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 	}
 }
 
-int CThreadSidPlayer::GetSongLength(SidTune &tune)
+int CThreadSidPlayer::GetSongLengthMs(SidTune &tune)
 {
 	int length;
 
@@ -676,18 +788,18 @@ int CThreadSidPlayer::GetSongLength(SidTune &tune)
 	// attempt to use songlengths.md5 first before
 	// attempting a songlengths.txt compatible set
 	length = m_sidDatabase.lengthMs(tune);
-	if (length <= 0)
+	/*if (length <= 0)
 	{
 		length = m_sidDatabase.length(tune);
 		if (length > 0)
 		{
 			length *= 1000;
 		}
-	}
+	}*/
 
 	if ((m_playerConfig.playLimitEnabled) && (length <= 0))
 	{
-		length = m_playerConfig.playLimitSec;
+		length = (m_playerConfig.playLimitSec * 1000);
 	}
 	
 	if (length < 0)
@@ -697,16 +809,17 @@ int CThreadSidPlayer::GetSongLength(SidTune &tune)
 	return length;
 }
 
-int CThreadSidPlayer::GetSongLength()
+int CThreadSidPlayer::GetSongLengthMs(void)
 {
-	return m_currentTuneLength;
+	return m_currentTuneLengthMs;
 }
 
 void CThreadSidPlayer::DoSeek()
 {
 	int bits;
 	int skip_bytes;
-	int numChn = (m_playerConfig.sidConfig.playback == SidConfig::STEREO) ? 2 : 1;
+	int numChn = (!m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
+				  (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
 	int freq = m_playerConfig.sidConfig.frequency;
 	int timesek = m_seekNeedMs / 1000;
 	if (timesek == 0) return;

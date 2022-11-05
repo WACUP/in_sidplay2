@@ -3,15 +3,19 @@
 #include "resource.h"
 #include "typesdefs.h"
 #include <shlobj.h>
+#include <sdk/winamp/in2.h>
+#include <loader/loader/utils.h>
+#include <nu/AutoCharFn.h>
+#include <Agave/Config/api_config.h>
 
 
-PlayerConfig *playerConfig;
-
+PlayerConfig *playerConfig = NULL;
+extern In_Module plugin;
 
 void ConfigDlgInitDialog(HWND hWnd)
 {
-	int val, val1;
-	char buf[20];
+	int val = 0;
+	char buf[20] = { 0 };
 
 	createsidplayer();
 
@@ -30,9 +34,25 @@ void ConfigDlgInitDialog(HWND hWnd)
 	SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_ADDSTRING,0,(LPARAM)L"44100");
 	SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_ADDSTRING,0,(LPARAM)L"22050");
 	SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_ADDSTRING,0,(LPARAM)L"11025");
+
 	//channels
 	SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_ADDSTRING,0,(LPARAM)L"Mono");
+
+	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
+	{
 	SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_ADDSTRING,0,(LPARAM)L"Stereo");
+
+		val = (playerConfig->sidConfig.playback == SidConfig::MONO) ? val = 0 : val = 1;
+	}
+	else
+	{
+		// if the force mono playback mode is enabled then
+		// this will show that state via the config dialog
+		// but will prevent this plug-in's mode being used
+		EnableControl(hWnd, IDC_CHANNELS, FALSE);
+	}
+	SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_SETCURSEL, (WPARAM)val, 0);
+
 	//C64 model
 	SendDlgItemMessage(hWnd, IDC_C64MODEL, CB_ADDSTRING, 0, (LPARAM)L"PAL");
 	SendDlgItemMessage(hWnd, IDC_C64MODEL, CB_ADDSTRING, 0, (LPARAM)L"NTSC");
@@ -66,9 +86,6 @@ void ConfigDlgInitDialog(HWND hWnd)
 	}
 	SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_SETCURSEL,(WPARAM)val,0);
 
-	//channel
-	val = (playerConfig->sidConfig.playback == SidConfig::MONO)? val=0 : val=1;
-	SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_SETCURSEL,(WPARAM)val,0);
 	//C64 model
 	SendDlgItemMessage(hWnd,IDC_C64MODEL,CB_SETCURSEL,(WPARAM)playerConfig->sidConfig.defaultC64Model,0);
 	//force c64 model
@@ -86,7 +103,7 @@ void ConfigDlgInitDialog(HWND hWnd)
 
 	if(playerConfig->playLimitEnabled) CheckDlgButton(hWnd,IDC_PLAYLIMIT_CHK,BST_CHECKED);
 	else CheckDlgButton(hWnd,IDC_PLAYLIMIT_CHK,BST_UNCHECKED);
-	SetDlgItemTextA(hWnd,IDC_PLAYLIMITTIME,itoa(playerConfig->playLimitSec,buf,10));
+	SetDlgItemTextA(hWnd,IDC_PLAYLIMITTIME,itoa(playerConfig->playLimitSec,buf,ARRAYSIZE(buf)));
 
 	if(playerConfig->useSongLengthFile)
 		CheckDlgButton(hWnd,IDC_ENABLESONGLENDB,BST_CHECKED);
@@ -129,7 +146,7 @@ void ConfigDlgInitDialog(HWND hWnd)
 
 void UpdateConfig(HWND hWnd)
 {
-	int val,val1;
+	int val;
 
 	val = SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_GETCURSEL,0,0);
 	switch(val)
@@ -148,9 +165,12 @@ void UpdateConfig(HWND hWnd)
 		break;
 	}
 
-	//playbacj chanells
+	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
+	{
+		//playback channels
 	val = SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_GETCURSEL,0,0);
 	playerConfig->sidConfig.playback = (val==0)? SidConfig::MONO : SidConfig::STEREO;
+	}
 
 	//C64 model
 	val = SendDlgItemMessage(hWnd, IDC_C64MODEL, CB_GETCURSEL, 0, 0);
@@ -220,35 +240,75 @@ void UpdateConfig(HWND hWnd)
 void SelectHvscFile(HWND hWnd)
 {
 	wchar_t path[MAX_PATH] = { 0 };
-	size_t pathLen;
+	OPENFILENAME of = { 0 };
+	of.lStructSize = sizeof(OPENFILENAME);
+	of.hwndOwner = hWnd;
+	of.nMaxFileTitle = 32;
+	of.lpstrDefExt = L"md5";
+	// TODO localise
+	of.lpstrFilter = L"Text files (*.md5,*.txt)\0*.md5;*.txt\0All files (*.*)\0*.*\0\0";
+	of.lpstrFile = path;
+	of.nMaxFile = ARRAYSIZE(path);
+	of.lpstrTitle = L"Select song length db file";
+	of.Flags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_EXPLORER | OFN_PATHMUSTEXIST | OFN_ENABLESIZING;
 
-	if(GetFileNameFromBrowse(hWnd,path,MAX_PATH,L"c:\\",L"md5",L"Text files (*.md5,*.txt)\0*.md5;*.txt\0All files (*.*)\0*.*\0\0",
-							 L"Select song length db file") != TRUE) return;
-	if(playerConfig->songLengthsFile != NULL) delete[] playerConfig->songLengthsFile;
-	pathLen = wcslen(path)+1;
-	playerConfig->songLengthsFile = new char[pathLen];
-	wcstombs(playerConfig->songLengthsFile,path,pathLen);
-	SetDlgItemTextA(hWnd,IDC_SONGLENGTHFILE,playerConfig->songLengthsFile);
+	if (GetFileName(&of))
+	{
+		const size_t pathLen = wcslen(path) + 1;
+
+		if (playerConfig->songLengthsFile != NULL)
+		{
+			/*delete[] playerConfig->songLengthsFile;/*/
+			AutoCharDupFree(playerConfig->songLengthsFile);/**/
+		}
+
+		/*playerConfig->songLengthsFile = new char[pathLen];
+		wcstombs(playerConfig->songLengthsFile, path, pathLen);/*/
+		playerConfig->songLengthsFile = AutoCharFnDup(path);/**/
+
+		SetDlgItemText(hWnd, IDC_SONGLENGTHFILE, path);
+	}
+}
+
+int CALLBACK WINAPI BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
+{
+	if (uMsg == BFFM_INITIALIZED)
+	{
+		if (playerConfig->hvscDirectory)
+		{
+			SendMessage(hwnd, BFFM_SETSELECTIONA, 1, (LPARAM)playerConfig->hvscDirectory);
+		}
+	}
+	return 0;
 }
 
 void SelectHvscDirectory(HWND hWnd)
 {
     BROWSEINFO bi = { 0 };
-
+	bi.hwndOwner = hWnd;
+	// TODO localise
     bi.lpszTitle = L"Select HVSC directory";
-    LPITEMIDLIST pidl = SHBrowseForFolder ( &bi );
-
-    if ( pidl != 0 )
+	bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
+	bi.lpfn = BrowseCallbackProc;
+	LPITEMIDLIST pidl = BrowseForFolder(&bi);
+	if (pidl)
     {
         // get the name of the folder and put it in path
 		wchar_t path[MAX_PATH] = {0};
-		SHGetPathFromIDList ( pidl, path );
-		CoTaskMemFree( pidl );
-		if(playerConfig->hvscDirectory != NULL) delete[] playerConfig->hvscDirectory;
-		size_t pathLen = wcslen(path)+1;
-		playerConfig->hvscDirectory = new char[pathLen];
-		wcstombs(playerConfig->hvscDirectory,path,pathLen);
-		SetDlgItemTextA(hWnd,IDC_HVSCDIR,playerConfig->hvscDirectory);
+		PathFromPIDL(pidl, path, ARRAYSIZE(path), true);
+		const size_t pathLen = wcslen(path) + 1;
+
+		if (playerConfig->hvscDirectory != NULL)
+		{
+			/*delete[] playerConfig->hvscDirectory;/*/
+			AutoCharDupFree(playerConfig->hvscDirectory);/**/
+		}
+
+		/*playerConfig->hvscDirectory = new char[pathLen];
+		wcstombs(playerConfig->hvscDirectory, path, pathLen);/*/
+		playerConfig->hvscDirectory = AutoCharFnDup(path);/**/
+
+		SetDlgItemText(hWnd, IDC_HVSCDIR, path);
 	}
 }
 
@@ -257,45 +317,45 @@ int CALLBACK ConfigDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 {
 	switch(uMsg)
 	{
-	case WM_COMMAND:
-		{
-			int wmId = LOWORD(wParam);
-			switch(wmId)
-			{
-			case IDOK:
-				UpdateConfig(hWnd);
-				sidPlayer->SaveConfigToFile(playerConfig);
-				sidPlayer->SetConfig(playerConfig);
-				EndDialog(hWnd,wmId);
-				break;
-			case IDC_BROWSE_BTN:
-				SelectHvscFile(hWnd);
-				break;
-			case IDC_BROWSE_HVSC:
-				SelectHvscDirectory(hWnd);
-				break;
-			case IDCANCEL:
-				EndDialog(hWnd,wmId);
-				break;
-			}
-			if (wmId==IDCANCEL)
-				EndDialog(hWnd,wmId);
-			//else
-			//	return FALSE;
-		}
-		break;
-
-	case WM_DESTROY:
-		delete playerConfig;
-		break;
-	case WM_INITDIALOG:
+		case WM_INITDIALOG:
 		{
 			playerConfig = reinterpret_cast<PlayerConfig*>(lParam);
 			ConfigDlgInitDialog(hWnd);
+			break;
+		}
+	case WM_COMMAND:
+		{
+			if (LOWORD(wParam) == IDC_BROWSE_BTN)
+			{
+				SelectHvscFile(hWnd);
+			}
+			else if (LOWORD(wParam) == IDC_BROWSE_HVSC)
+			{
+				SelectHvscDirectory(hWnd);
+			}
+				break;
+			}
+		case WM_DESTROY:
+		{
+			if (playerConfig)
+			{
+				UpdateConfig(hWnd);
+
+				if (sidPlayer)
+				{
+					sidPlayer->SaveConfigToFile(playerConfig);
+					sidPlayer->SetConfig(playerConfig);
+		}
+
+		delete playerConfig;
+				playerConfig = NULL;
 		}
 		break;
+		}
 	default:
+		{
 		return FALSE;
+		}
 	}
 
 	return TRUE;

@@ -62,54 +62,51 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 
 #if defined(APSTUDIO_INVOKED) || !defined(ORIGINAL)
 IDD_CONFIG_DLG DIALOGEX 0, 0, 276, 279
-STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "SID Player Configuration"
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CONTROL | WS_CHILD | WS_CLIPSIBLINGS
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    GROUPBOX        "Output settings",IDC_STATIC,6,3,263,72
-    LTEXT           "Frequency:",IDC_STATIC,14,22,40,10,SS_CENTERIMAGE
-    COMBOBOX        IDC_FREQUENCY,56,21,72,36,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Channels:",IDC_STATIC,14,40,36,10,SS_CENTERIMAGE
-    COMBOBOX        IDC_CHANNELS,56,39,72,36,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "Sid1",IDC_STATIC,155,11,14,8
-    CONTROL         "Voice1",IDC_VOICE00,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,140,22,37,10
-    CONTROL         "Voice2",IDC_VOICE01,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,140,35,37,10
-    CONTROL         "Voice3",IDC_VOICE02,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,140,48,37,10
-    LTEXT           "Sid2",IDC_STATIC,197,11,14,8
-    CONTROL         "Voice1",IDC_VOICE10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,22,37,10
-    CONTROL         "Voice2",IDC_VOICE11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,35,37,10
-    CONTROL         "Voice3",IDC_VOICE12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,182,48,37,10
-    LTEXT           "Sid3",IDC_STATIC,239,11,14,8
-    CONTROL         "Voice1",IDC_VOICE20,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,224,22,37,10
-    CONTROL         "Vocie2",IDC_VOICE21,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,224,35,37,10
-    CONTROL         "Voice3",IDC_VOICE22,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,224,48,37,10
-    CTEXT           "|_ Affects pseudo stereo_|",IDC_STATIC,133,61,90,8
-    GROUPBOX        "Emulation",IDC_STATIC,6,78,263,80
-    LTEXT           "C64 model:",IDC_STATIC,14,91,54,8
-    COMBOBOX        IDC_C64MODEL,68,89,72,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Force C64 model",IDC_FORCE_C64MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,90,90,10
-    CONTROL         "Enable pseudo stereo",IDC_PSEUDOSTEREO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,107,85,10
-    LTEXT           "SID model:",IDC_STATIC,14,123,36,8
-    COMBOBOX        IDC_SIDMODEL,68,121,72,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Force SID model",IDC_FORCE_SID_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,122,96,10
-    LTEXT           "SID2 model:",IDC_STATIC,14,140,48,8
-    COMBOBOX        IDC_SID2MODEL,68,138,72,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Force SID2 model",IDC_FORCE_SID2_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,152,139,72,10
-    GROUPBOX        "Miscellaneous",IDC_STATIC,6,161,263,95
-    CONTROL         "Song play time limit [s]:",IDC_PLAYLIMIT_CHK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,14,173,90,12
-    EDITTEXT        IDC_PLAYLIMITTIME,104,173,36,12,ES_AUTOHSCROLL
-    LTEXT           "This is used when there is no song length database / song is unknown.",IDC_STATIC,146,171,118,18
+    GROUPBOX        "Output settings",IDC_STATIC,0,0,272,72
+    LTEXT           "Frequency:",IDC_STATIC,7,19,40,10,SS_CENTERIMAGE
+    COMBOBOX        IDC_FREQUENCY,49,18,72,36,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Channels:",IDC_STATIC,7,37,36,10,SS_CENTERIMAGE
+    COMBOBOX        IDC_CHANNELS,49,36,72,36,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Sid1",IDC_STATIC,148,8,14,8
+    CONTROL         "Voice1",IDC_VOICE00,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,133,19,37,10
+    CONTROL         "Voice2",IDC_VOICE01,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,133,32,37,10
+    CONTROL         "Voice3",IDC_VOICE02,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,133,45,37,10
+    LTEXT           "Sid2",IDC_STATIC,190,8,14,8
+    CONTROL         "Voice1",IDC_VOICE10,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,19,37,10
+    CONTROL         "Voice2",IDC_VOICE11,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,32,37,10
+    CONTROL         "Voice3",IDC_VOICE12,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,175,45,37,10
+    LTEXT           "Sid3",IDC_STATIC,232,8,14,8
+    CONTROL         "Voice1",IDC_VOICE20,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,19,37,10
+    CONTROL         "Vocie2",IDC_VOICE21,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,32,37,10
+    CONTROL         "Voice3",IDC_VOICE22,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,217,45,37,10
+    CTEXT           "|_ Affects pseudo stereo_|",IDC_STATIC,126,58,89,8
+    GROUPBOX        "Emulation",IDC_STATIC,0,75,272,80
+    LTEXT           "C64 model:",IDC_STATIC,7,88,48,8
+    COMBOBOX        IDC_C64MODEL,61,86,72,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Force C64 model",IDC_FORCE_C64MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,145,87,96,10
+    CONTROL         "Enable pseudo stereo",IDC_PSEUDOSTEREO,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,104,88,10
+    LTEXT           "SID model:",IDC_STATIC,7,120,48,8
+    COMBOBOX        IDC_SIDMODEL,61,118,72,42,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Force SID model",IDC_FORCE_SID_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,145,119,96,10
+    LTEXT           "SID2 model:",IDC_STATIC,7,137,48,8
+    COMBOBOX        IDC_SID2MODEL,61,135,72,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Force SID2 model",IDC_FORCE_SID2_MODEL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,145,136,96,10
+    GROUPBOX        "Miscellaneous",IDC_STATIC,0,158,272,95
+    CONTROL         "Song play time limit [s]:",IDC_PLAYLIMIT_CHK,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,170,90,12
+    EDITTEXT        IDC_PLAYLIMITTIME,97,170,36,12,ES_AUTOHSCROLL
+    LTEXT           "This is used when there is no song length database / song is unknown.",IDC_STATIC,139,168,118,18
     CONTROL         "Use the song length database",IDC_ENABLESONGLENDB,
-                    "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,13,192,70,18
-    EDITTEXT        IDC_SONGLENGTHFILE,88,195,132,12,ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON      "Browse...",IDC_BROWSE_BTN,220,194,44,14
-    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.md5)",IDC_STATIC,23,210,241,8
-    CONTROL         "Use STIL (from the HVSC folder)",IDC_ENABLESTIL,"Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,13,224,70,18
-    EDITTEXT        IDC_HVSCDIR,88,224,132,12,ES_AUTOHSCROLL | ES_READONLY
-    PUSHBUTTON      "Browse....",IDC_BROWSE_HVSC,220,223,44,15
-    LTEXT           "(e.g. c:\\HVSC\\c64Music). This works independently of the songlength.",IDC_STATIC,23,240,241,8
-    DEFPUSHBUTTON   "&OK",IDOK,89,260,50,14
-    PUSHBUTTON      "&Cancel",IDCANCEL,143,260,50,14
+                    "Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,6,189,70,18
+    EDITTEXT        IDC_SONGLENGTHFILE,81,192,142,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse...",IDC_BROWSE_BTN,223,191,44,14
+    LTEXT           "(e.g. c:\\HVSC\\c64Music\\DOCUMENTS\\songlengths.md5)",IDC_STATIC,16,207,241,8
+    CONTROL         "Use STIL (from the HVSC folder)",IDC_ENABLESTIL,"Button",BS_AUTOCHECKBOX | BS_TOP | BS_MULTILINE | WS_TABSTOP,6,221,70,18
+    EDITTEXT        IDC_HVSCDIR,81,221,142,12,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Browse....",IDC_BROWSE_HVSC,223,220,44,14
+    LTEXT           "(e.g. c:\\HVSC\\c64Music). This works independently of the songlength.",IDC_STATIC,16,237,252,8
 END
 #endif
 
@@ -241,8 +238,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,2,10,0
- PRODUCTVERSION 2,2,10,0
+ FILEVERSION 2,4,0,0
+ PRODUCTVERSION 2,4,0,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -257,14 +254,14 @@ BEGIN
     BEGIN
         BLOCK "080004b0"
         BEGIN
-            VALUE "CompanyName", "WACUP (WinAmp Community Update Project)"
-            VALUE "FileDescription", "Winamp Input Plug-in"
-            VALUE "FileVersion", "2.2.10.0"
+            VALUE "CompanyName", "WACUP"
+            VALUE "FileDescription", "Input Plug-in"
+            VALUE "FileVersion", "2.4.0.0"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2021"
+            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2022"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.2.10.0"
+            VALUE "ProductVersion", "2.4.0.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -288,6 +285,7 @@ STRINGTABLE
 BEGIN
     IDS_PLUGIN_NAME         "SID Player"
     IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music &\nmakes use of libsidplayfp (v%s) &\nreSID-fp for its playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
+    IDS_SID                 "SID"
 END
 
 #endif    // English (United Kingdom) resources

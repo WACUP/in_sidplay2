@@ -4,6 +4,8 @@
 #include "SidInfoImpl.h"
 #include "c64roms.h"
 #include <loader/loader/paths.h>
+#define WA_UTILS_SIMPLE
+#include <loader/loader/utils.h>
 
 CThreadSidDecoder::CThreadSidDecoder(void): m_tune(0), m_threadHandle(0)
 {
@@ -28,7 +30,7 @@ CThreadSidDecoder::CThreadSidDecoder(void): m_tune(0), m_threadHandle(0)
 
 	m_playerConfig.pseudoStereo = false;
 	m_playerConfig.sid2Model = SidConfig::sid_model_t::MOS6581;	
-	m_currentTuneLength = -1;
+	m_currentTuneLengthMs = -1000;
 	m_seekNeedMs = 0;
 	m_engine = new sidplayfp;
 }
@@ -89,7 +91,7 @@ void CThreadSidDecoder::Play(void)
 		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann)/1000, m_playerConfig.sidConfig.frequency /1000,numChann,1);*/
 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)CThreadSidDecoder::Run,this,0,NULL);
+		m_threadHandle = CreateThread(NULL,0,CThreadSidDecoder::Run,this,0,NULL);
 		// TODO api_config & thread priority level
 	}
 }
@@ -126,10 +128,10 @@ void CThreadSidDecoder::LoadTune(const char* name)
 	}
 	m_tune.selectSong(tuneInfo->startSong());
 
-	m_currentTuneLength = m_sidDatabase.length(m_tune);
-	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLength <= 0))
+	m_currentTuneLengthMs = m_sidDatabase.lengthMs(m_tune);
+	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLengthMs <= 0))
 	{
-		m_currentTuneLength = m_playerConfig.playLimitSec;
+		m_currentTuneLengthMs = (m_playerConfig.playLimitSec * 1000);
 	}
 	m_engine->load(&m_tune);
 	//mute must be applied after SID's have been created
@@ -198,12 +200,13 @@ DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 		int timeElapsed = playerObj->m_playTimems;
 		//if we konw the song length and timer just reached it then go to next song
 		
-		if(playerObj->GetSongLength() >= 1)
+		const int lengthMs = playerObj->GetSongLengthMs();
+		if(lengthMs >= 1)
 		{
-			if(playerObj->GetSongLength()*1000 < timeElapsed)
+			if(lengthMs < timeElapsed)
 			{
 				playerObj->m_playerStatus = SP_STOPPED;
-				PostMessage(playerObj->m_inmod->hMainWindow,WM_WA_MPEG_EOF,0,0);
+				PostEOF();
 				return 0;
 			}
 			//Sleep(10);
@@ -214,7 +217,7 @@ DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 				if((playerObj->m_playerConfig.playLimitSec*1000) < timeElapsed) 
 				{
 					playerObj->m_playerStatus = SP_STOPPED;
-					PostMessage(playerObj->m_inmod->hMainWindow,WM_WA_MPEG_EOF,0,0);
+					PostEOF();
 					//Sleep(10);
 					return 0;
 				}
@@ -239,14 +242,19 @@ void CThreadSidDecoder::PlaySubtune(int subTune)
 {	
 	Stop();
 	m_tune.selectSong(subTune);	
-	m_currentTuneLength = m_sidDatabase.length(m_tune);
-	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLength <= 0))
+	m_currentTuneLengthMs = m_sidDatabase.lengthMs(m_tune);
+	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLengthMs <= 0))
 	{
-		m_currentTuneLength = m_playerConfig.playLimitSec;
+		m_currentTuneLengthMs = (m_playerConfig.playLimitSec * 1000);
 	}
 	m_engine->stop();
 	m_engine->load(&m_tune);
 	Play();
+}
+
+const SidTuneInfo* CThreadSidDecoder::GetTuneInfo(void)
+{
+	return (m_tune.getStatus()) ? m_tune.getInfo() : NULL; //SidTuneInfo();
 }
 
 bool CThreadSidDecoder::LoadConfigFromFile(PlayerConfig *conf)
@@ -259,13 +267,12 @@ bool CThreadSidDecoder::LoadConfigFromFile(PlayerConfig *conf)
 	string sLine; 
 	string token;
 	string value;
-	int pos;
 	FILE *cfgFile;
 
 	if (!fileName[0])
 	{
 		// use the settings path so we can have a portable wacup install no matter what :)
-		PathCombine(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
+		CombinePath(fileName, GetPaths()->settings_sub_dir, L"in_sidplay2.ini");
 	}
 
 	cfgFile = _wfopen(fileName,L"rb");
@@ -277,7 +284,7 @@ bool CThreadSidDecoder::LoadConfigFromFile(PlayerConfig *conf)
 		ReadLine(cLine,cfgFile,maxLen);
 		if(strlen(cLine) == 0) continue;
 		sLine.assign(cLine);
-		pos = sLine.find("=");
+		const size_t pos = sLine.find("=");
 		token = sLine.substr(0,pos);
 		value = sLine.substr(pos+1);
 		if((token.length() ==0) || (value.length() ==0)) continue;
@@ -546,9 +553,9 @@ void CThreadSidDecoder::SetConfig(PlayerConfig* newConfig)
 	}
 }
 
-int CThreadSidDecoder::GetSongLength()
+int CThreadSidDecoder::GetSongLengthMs(void)
 {
-	return m_currentTuneLength;
+	return m_currentTuneLengthMs;
 }
 
 void CThreadSidDecoder::DoSeek()

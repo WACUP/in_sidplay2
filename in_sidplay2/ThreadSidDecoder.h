@@ -30,7 +30,7 @@ private:
 	unsigned __int64 m_playTimems; //int 
 	char* m_decodeBuf;
 	int m_decodeBufLen;
-	int m_currentTuneLength;
+	int m_currentTuneLengthMs;
 private:
 	static DWORD __stdcall Run(void* thisparam);
 	void AssignConfigValue(PlayerConfig *conf, string token, string value);
@@ -53,7 +53,7 @@ public:
 	const SidTuneInfo* GetTuneInfo(void);
 	bool LoadConfigFromFile(PlayerConfig *conf);
 	void SetConfig(PlayerConfig* newConfig);
-	int GetSongLength();
+	int GetSongLengthMs(void);
 	//! Moves emulation time pointer to given time
 	void SeekTo(int timeMs);
 };

@@ -4,6 +4,7 @@
 //
 #define IDS_PLUGIN_NAME                 1
 #define IDS_ABOUT_STRING                2
+#define IDS_SID                         3
 #define IDD_CONFIG_DLG                  101
 #define IDD_INFO                        105
 #define IDC_LIST                        1001

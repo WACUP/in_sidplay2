@@ -14,9 +14,8 @@ std::vector<std::string> split(const std::string &text, char sep) {
 
 void replaceAll(std::string& stringToReplace, const char* stringToFind, const char* replacement)
 {
-	size_t index = 0;
-	int toFindLen = strlen(stringToFind);
-	int replacementLen = strlen(replacement);
+	size_t index = 0, toFindLen = strlen(stringToFind),
+		   replacementLen = strlen(replacement);
 	while (true) {
 		/* Locate the substring to replace. */
 		index = stringToReplace.find(stringToFind, index);

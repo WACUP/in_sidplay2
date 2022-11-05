@@ -17,8 +17,6 @@
 #include <sdk/winamp/in2.h>
 #include "typesdefs.h"
 
-#define WM_WA_MPEG_EOF WM_USER+2
-
 #define PLAYBACK_BIT_PRECISION 16
 
 using namespace std;
@@ -54,7 +52,7 @@ private:
 	unsigned __int64 m_playTimems; //int 
 	char* m_decodeBuf;
 	int m_decodeBufLen;
-	int m_currentTuneLength;
+	int m_currentTuneLengthMs;
 private:
 	static DWORD __stdcall Run(void* thisparam);
 	void AssignConfigValue(PlayerConfig *conf, string token, string value);
@@ -70,7 +68,7 @@ protected:
 	void FillSTILData2();
 	void ClearSTILData(void);
 public:	
-	int maxLantency;
+	int maxLatency;
 	CThreadSidPlayer(In_Module& inWAmod);
 	~CThreadSidPlayer(void);
 	void Init(void);
@@ -87,8 +85,8 @@ public:
 	void SaveConfigToFile(PlayerConfig *conf);
 	const PlayerConfig& GetCurrentConfig();
 	void SetConfig(PlayerConfig* newConfig);
-	int GetSongLength(SidTune &tune);
-	int GetSongLength();
+	int GetSongLengthMs(SidTune &tune);
+	int GetSongLengthMs(void);
 	//! Moves emulation time pointer to given time
 	void SeekTo(int timeMs);
 	const char* GetSTILData(const char* filePath);

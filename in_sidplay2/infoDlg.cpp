@@ -2,10 +2,11 @@
 #include "infodlg.h"
 #include "resource.h"
 #include "threadsidplayer.h"
+#include <loader/loader/utils.h>
 
 extern CThreadSidPlayer *sidPlayer;
 
-int CALLBACK InfoDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK InfoDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static int ismychange = 0;
 	switch(uMsg)
@@ -28,7 +29,7 @@ int CALLBACK InfoDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			SetDlgItemTextA(hWnd,IDC_INITADDR_STC,buf);
 			_snprintf(buf,20,"$%x",tuneInfo->playAddr());
 			SetDlgItemTextA(hWnd,IDC_PLAYADDR_STC,buf);
-			SetDlgItemTextA(hWnd,IDC_SUBSONGS_STC,itoa(tuneInfo->songs(),buf,10));
+			SetDlgItemTextA(hWnd,IDC_SUBSONGS_STC,itoa(tuneInfo->songs(),buf,ARRAYSIZE(buf)));
 			_snprintf(buf,20,"$%x",tuneInfo->sidChipBase(1));
 			SetDlgItemTextA(hWnd,IDC_SID2_ADDR,buf);
 			_snprintf(buf,20,"$%x",tuneInfo->sidChipBase(2));
@@ -71,7 +72,7 @@ int CALLBACK InfoDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					break;
 				}
 			}
-			SetDlgItemTextA(hWnd,IDC_FILELENGTH_STC,itoa(tuneInfo->dataFileLen(),buf,10));
+			SetDlgItemTextA(hWnd,IDC_FILELENGTH_STC,itoa(tuneInfo->dataFileLen(),buf,ARRAYSIZE(buf)));
 
 			/*infoStr.clear();
 			for(i = 0; i < tuneInfo->numberOfInfoStrings(); ++i)
