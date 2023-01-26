@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2012-2015 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2012-2022 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,14 +22,7 @@
 #ifndef SYSTEMROMBANKS_H
 #define SYSTEMROMBANKS_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
-
 #include <cstring>
 
 #include "Bank.h"
@@ -42,11 +35,14 @@ namespace libsidplayfp
 
 /**
  * ROM bank base class.
- * N must be a power of two.
  */
 template <int N>
 class romBank : public Bank
 {
+#ifdef HAVE_CXX11
+    static_assert((N != 0) && ((N & (N - 1)) == 0), "N must be a power of two");
+#endif
+
 protected:
     /// The ROM array
     uint8_t rom[N];

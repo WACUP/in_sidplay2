@@ -24,13 +24,7 @@
 #ifndef SPRITES_H
 #define SPRITES_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include <cstring>
 
@@ -171,7 +165,7 @@ public:
      *
      * @param val bitmask for selected sprites
      */
-    bool isDma(unsigned int val) const
+    inline bool isDma(unsigned int val) const
     {
         return dma & val;
     }

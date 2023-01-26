@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2016 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  *
  * This program is free software; you can redistribute it and/or modify
@@ -24,8 +24,9 @@
 
 #include <map>
 
-#include "siddefs-fp.h"
 #include "array.h"
+#include "sidcxx11.h"
+#include "siddefs-fp.h"
 
 
 namespace reSIDfp
@@ -36,12 +37,10 @@ namespace reSIDfp
  */
 typedef struct
 {
-    float bias;
+    float threshold;
     float pulsestrength;
-    float topbit;
     float distance1;
     float distance2;
-    float stmix;
 } CombinedWaveformConfig;
 
 /**
@@ -72,7 +71,7 @@ typedef struct
  *
  * - Noise outputs the shift register bits to DAC inputs as described above.
  *   Each output is also used as input to the next bit when the shift register
- *   is shifted.
+ *   is shifted. Lower four bits are grounded.
  * - Pulse connects a single line to all DAC inputs. The line is connected to
  *   either 5V (pulse on) or 0V (pulse off) at bit 11, and ends at bit 0.
  * - Triangle connects the upper 11 bits of the (MSB EOR'ed) accumulator to the
@@ -88,6 +87,14 @@ typedef struct
  *   pulse line.
  * - The combination of triangle and sawtooth interconnects neighboring bits
  *   of the sawtooth waveform.
+ *
+ * Also in the 6581 the MSB of the oscillator, used as input for the
+ * triangle xor logic and the pulse adder's last bit, is connected directly
+ * to the waveform selector, while in the 8580 it is latched at sid_clk2
+ * before being forwarded to the selector. Thus in the 6581 if the sawtooth MSB
+ * is pulled down it might affect the oscillator's adder
+ * driving the top bit low.
+ *
  */
 class WaveformCalculator
 {
@@ -95,9 +102,17 @@ private:
     typedef std::map<const CombinedWaveformConfig*, matrix_t> cw_cache_t;
 
 private:
-    cw_cache_t CACHE;
+    matrix_t wftable;
 
-    WaveformCalculator() {}
+    cw_cache_t PULLDOWN_CACHE;
+
+private:
+    WaveformCalculator();
+
+    /**
+     * Build waveform table.
+     */
+    void buildWaveTable();
 
 public:
     /**
@@ -106,12 +121,19 @@ public:
     static WaveformCalculator* getInstance();
 
     /**
-     * Build waveform tables for use by WaveformGenerator.
+     * Get the waveform table for use by WaveformGenerator.
      *
-     * @param model Chip model to use
      * @return Waveform table
      */
-    matrix_t* buildTable(ChipModel model);
+    matrix_t* getWaveTable() { return &wftable; }
+
+    /**
+     * Build pulldown table for use by WaveformGenerator.
+     *
+     * @param model Chip model to use
+     * @return Pulldown table
+     */
+    matrix_t* buildPulldownTable(ChipModel model);
 };
 
 } // namespace reSIDfp

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2015 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -23,14 +23,7 @@
 #ifndef C64_H
 #define C64_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
-
 #include <cstdio>
 
 #include <map>
@@ -61,22 +54,13 @@ namespace libsidplayfp
 class c64sid;
 class sidmemory;
 
-#ifdef PC64_TESTSUITE
-class testEnv
-{
-public:
-    virtual ~testEnv() {}
-    virtual void load(const char *) =0;
-};
-#endif
-
 /**
  * Commodore 64 emulation core.
  *
  * It consists of the following chips:
  * - CPU 6510
- * - VIC-II 6567/6569/6572
- * - CIA 6526
+ * - VIC-II 6567/6569/6572/6573
+ * - CIA 6526/8521
  * - SID 6581/8580
  * - PLA 7700/82S100
  * - Color RAM 2114
@@ -94,7 +78,15 @@ public:
         ,NTSC_M       ///< NTSC C64
         ,OLD_NTSC_M   ///< Old NTSC C64
         ,PAL_N        ///< C64 Drean
+        ,PAL_M        ///< C64 Brasil
     } model_t;
+
+    typedef enum
+    {
+        OLD = 0     ///< Old CIA
+        ,NEW        ///< New CIA
+        ,OLD_4485   ///< Old CIA, special batch labeled 4485
+    } cia_model_t;
 
 private:
     typedef std::map<int, ExtraSidBank*> sidBankMap_t;
@@ -192,39 +184,34 @@ private:
      */
     inline void setBA(bool state) override;
 
+    /**
+     * @param state fire pressed, active low
+     */
     inline void lightpen(bool state) override;
-
-#ifdef PC64_TESTSUITE
-    testEnv *m_env;
-
-    void loadFile(const char *file) override
-    {
-        m_env->load(file);
-    }
-#endif
 
     void resetIoBank();
 
 public:
     c64();
-    ~c64() {}
-
-#ifdef PC64_TESTSUITE
-    void setTestEnv(testEnv *env)
-    {
-        m_env = env;
-    }
-#endif
 
     /**
      * Get C64's event scheduler
      *
      * @return the scheduler
      */
-    //@{
     EventScheduler *getEventScheduler() { return &eventScheduler; }
-    const EventScheduler &getEventScheduler() const { return eventScheduler; }
-    //@}
+
+    uint_least32_t getTimeMs() const
+    {
+        return static_cast<uint_least32_t>((eventScheduler.getTime(EVENT_CLOCK_PHI1) * 1000) / cpuFrequency);
+    }
+
+    /**
+     * Clock the emulation.
+     *
+     * @throws haltInstruction
+     */
+    void clock() { eventScheduler.clock(); }
 
     void debug(bool enable, FILE *out) { cpu.debug(enable, out); }
 
@@ -236,10 +223,10 @@ public:
      */
     void setModel(model_t model);
 
-    void setRoms(const uint8_t* kernal, const uint8_t* basic, const uint8_t* character)
-    {
-        mmu.setRoms(kernal, basic, character);
-    }
+    /**
+     * Set the cia model.
+     */
+    void setCiaModel(cia_model_t model);
 
     /**
      * Get the CPU clock speed.
@@ -266,10 +253,6 @@ public:
      */
     bool addExtraSid(c64sid *s, int address);
 
-	/**
-	* ZR: Clears parallel sid (must be called after disabling parallel mode)
-	*/
-	void removeParallelSid();
     /**
      * Remove all the SIDs.
      */
@@ -320,7 +303,7 @@ void c64::setBA(bool state)
 
 void c64::lightpen(bool state)
 {
-    if (state)
+    if (!state)
         vic.triggerLightpen();
     else
         vic.clearLightpen();

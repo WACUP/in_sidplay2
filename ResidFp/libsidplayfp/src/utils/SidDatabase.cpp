@@ -1,171 +1,224 @@
-/***************************************************************************
-                          dbget.cpp  -  Get time from database
-                             -------------------
-    begin                : Fri Jun 2 2000
-    copyright            : (C) 2000 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of libsidplayfp, a SID player engine.
+ *
+ * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2007-2010 Antti Lankila
+ * Copyright 2000-2001 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#include <cctype>
+#include <cstdlib>
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "config.h"
 #include "SidDatabase.h"
-#include "MD5/MD5.h"
 
-const char *SidDatabase::ERR_DATABASE_CORRUPT        = "SID DATABASE ERROR: Database seems to be corrupt.";
-const char *SidDatabase::ERR_NO_DATABASE_LOADED      = "SID DATABASE ERROR: Songlength database not loaded.";
-const char *SidDatabase::ERR_NO_SELECTED_SONG        = "SID DATABASE ERROR: No song selected for retrieving song length.";
-const char *SidDatabase::ERR_MEM_ALLOC               = "SID DATABASE ERROR: Memory Allocation Failure.";
-const char *SidDatabase::ERR_UNABLE_TO_LOAD_DATABASE = "SID DATABASE ERROR: Unable to load the songlegnth database.";
+#include "sidplayfp/SidTune.h"
+#include "sidplayfp/SidTuneInfo.h"
 
+#include "iniParser.h"
 
-SidDatabase::~SidDatabase ()
+#include "sidcxx11.h"
+
+#define WA_UTILS_SIMPLE
+#define _PRSHT_H_
+#define _INC_COMMCTRL
+#define _INC_COMMDLG
+#include <../../../../loader/loader/utils.h>
+
+const char ERR_DATABASE_CORRUPT[]        = "SID DATABASE ERROR: Database seems to be corrupt.";
+const char ERR_NO_DATABASE_LOADED[]      = "SID DATABASE ERROR: Songlength database not loaded.";
+const char ERR_NO_SELECTED_SONG[]        = "SID DATABASE ERROR: No song selected for retrieving song length.";
+const char ERR_UNABLE_TO_LOAD_DATABASE[] = "SID DATABASE ERROR: Unable to load the songlength database.";
+
+class parseError {};
+
+SidDatabase::SidDatabase() :
+    m_parser(nullptr),
+    errorString(ERR_NO_DATABASE_LOADED)
+{}
+
+SidDatabase::~SidDatabase()
 {
-    close ();
+    delete m_parser;
 }
 
-
-int_least32_t SidDatabase::parseTimeStamp(const char* arg)
+// mm:ss[.SSS]
+//
+// Examples of song length values:
+//
+// 1:02
+//
+// 1:02.5
+//
+// 1:02.500
+//
+const char *parseTime(const char *str, int_least32_t &result)
 {
-    /* Read in m:s format at most.
-     * Could use a system function if available.
-     */
-    int_least32_t seconds = 0;
-    int  passes    = 2;  // minutes, seconds
-    bool gotDigits = false;
-    while ( passes-- )
+    char *end;
+    const long minutes = AStr2L(str, &end, 10);
+
+    if (!end || (*end != ':'))
     {
-        if ( isdigit(*arg) )
-        {
-            int t = atoi(arg);
-            seconds += t;
-            gotDigits = true;
-        }
-        while ( *arg && isdigit(*arg) )
-        {
-            ++arg;
-        }
-        if ( *arg && *arg==':' )
-        {
-            seconds *= 60;
-            ++arg;
-        }
+        throw parseError();
     }
-    
-    // Handle -:-- time stamps and old 0:00 entries which
-    // need to be rounded up by one second.
-    if ( !gotDigits )
-        seconds = 0;
-    else if ( seconds==0 )
-        ++seconds;
-    
-    return seconds;
-}
 
+    end++;
+    const long seconds = AStr2L(end, &end, 10);
+    result = ((minutes * 60) + seconds) * 1000;
 
-uint_least8_t SidDatabase::timesFound (char *str)
-{
-    /* Try and determine the number of times read back.
-     * Used to check validility of times in database.
-    */
-    uint_least8_t count = 0;
-    while (*str)
+    if (end && (*end == '.'))
     {
-        if (*str++ == ':')
-        count++;
+        char *start = end + 1;
+        long milliseconds = AStr2L(start, &end, 10);
+        switch (end - start)
+        {
+			case 1: milliseconds *= 100; break;
+			case 2: milliseconds *= 10; break;
+			case 3: break;
+			default: throw parseError();
+        }
+        if (milliseconds<0 || milliseconds>=1000)
+            throw parseError();
+
+        result += milliseconds;
     }
-    return count;
+
+    while (end && (*end != 0) && !isspace(*end))
+    {
+        end++;
+    }
+
+    return end;
 }
 
 
-int SidDatabase::open (const char *filename)
+bool SidDatabase::open(const char *filename)
 {
-    close ();
-    database = ini_open (filename, "r", ";");
-    if (!database)
+    delete m_parser;
+    m_parser = new libsidplayfp::iniParser();
+
+    if (!m_parser->open(filename))
     {
+        close();
         errorString = ERR_UNABLE_TO_LOAD_DATABASE;
-        return -1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-void SidDatabase::close ()
+#ifdef _WIN32
+bool SidDatabase::open(const wchar_t* filename)
 {
-    if (database)
-        ini_close (database);
+    delete m_parser;
+    m_parser = new libsidplayfp::iniParser();
+
+    if (!m_parser->open(filename))
+    {
+        close();
+        errorString = ERR_UNABLE_TO_LOAD_DATABASE;
+        return false;
+    }
+
+    return true;
+}
+#endif
+
+void SidDatabase::close()
+{
+    delete m_parser;
+    m_parser = nullptr;
 }
 
-int_least32_t SidDatabase::length (SidTune &tune)
+/*int_least32_t SidDatabase::length(SidTune &tune)
 {
-	
-    char md5[SidTune::MD5_LENGTH + 1];
-	//const SidTuneInfo* inf = tune.getInfo();
-    uint_least16_t song = tune.getInfo()->currentSong();
+    const SidTuneInfo* tuneInfo = tune.getInfo();
+    const unsigned int song = (tuneInfo ? tuneInfo->currentSong() : 0);
+
     if (!song)
     {
         errorString = ERR_NO_SELECTED_SONG;
         return -1;
     }
-    tune.createMD5 (md5);
-    return length  (md5, song);
+
+    char md5[SidTune::MD5_LENGTH + 1] = { 0 };
+    tune.createMD5New(md5);
+    return lengthMs(md5, song) / 1000;
+}*/
+
+int_least32_t SidDatabase::lengthMs(SidTune &tune)
+{
+    const SidTuneInfo* tuneInfo = tune.getInfo();
+    const unsigned int song = (tuneInfo ? tuneInfo->currentSong() : 0);
+
+    if (!song)
+    {
+        errorString = ERR_NO_SELECTED_SONG;
+        return -1;
+    }
+
+    char md5[SidTune::MD5_LENGTH + 1] = { 0 };
+    tune.createMD5New(md5);
+    return lengthMs(md5, song);
 }
 
-int_least32_t SidDatabase::length (const char *md5, uint_least16_t song)
+/*int_least32_t SidDatabase::length(const char *md5, unsigned int song)
 {
-    int_least32_t  time = 0;
-    char           timeStamp[10];
+    return lengthMs(md5, song) / 1000;
+}*/
 
-	
-    if (!database)
+int_least32_t SidDatabase::lengthMs(const char *md5, unsigned int song)
+{
+    if (m_parser == nullptr)
     {
         errorString = ERR_NO_DATABASE_LOADED;
         return -1;
     }
 
-    // Now set up array access
-    if (ini_listDelims  (database, " ") == -1)
+    // Read Time (and check times before hand)
+    if (!m_parser->setSection("Database"))
     {
-        errorString = ERR_MEM_ALLOC;
+        errorString = ERR_DATABASE_CORRUPT;
         return -1;
     }
 
-    // Read Time (and check times before hand)
-    (void) ini_locateHeading (database, "Database");
-    (void) ini_locateKey     (database, md5);
-    // If length return is -1 then no entry found in database
-    if (ini_dataLength (database) != -1)
+    const char *timeStamp = m_parser->getValue(md5);
+
+    // If return is null then no entry found in database
+    if (!timeStamp)
     {
-        for (uint_least16_t i = 0; i < song; i++)
+        errorString = ERR_DATABASE_CORRUPT;
+        return -1;
+    }
+
+    const char *str = timeStamp;
+    int_least32_t time = 0;
+
+    for (unsigned int i = 0; i < song; i++)
+    {
+        // Validate Time
+        try
         {
-            if (ini_readString (database, timeStamp, sizeof (timeStamp)) == -1)
-            {   // No time found
-                errorString = ERR_DATABASE_CORRUPT;
-                return -1;
-            }
-
-            // Validate Time
-            if (timesFound (timeStamp) != 1)
-            {
-                errorString = ERR_DATABASE_CORRUPT;
-                return -1;
-            }
+            str = parseTime(str, time);
         }
-
-        // Parse timestamp
-        time = parseTimeStamp (timeStamp);
+        catch (parseError const &)
+        {
+            errorString = ERR_DATABASE_CORRUPT;
+            return -1;
+        }
     }
 
     return time;

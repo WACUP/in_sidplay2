@@ -9,3 +9,4 @@ winampGetExtendedRead_getData @6
 winampGetExtendedRead_openW @7
 winampGetExtendedRead_setTime @8
 winampUninstallPlugin @9
+GetSubSongInfo @13 NONAME

@@ -21,13 +21,7 @@
 #ifndef PSID_H
 #define PSID_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "SidTuneBase.h"
 
@@ -72,7 +66,9 @@ public:
      */
     static SidTuneBase* load(buffer_t& dataBuf);
 
-    virtual const char *createMD5(char *md5) override;
+    //virtual const char *createMD5(char *md5) override;
+
+    virtual const char *createMD5New(char *md5) override;
 
 private:
     // prevent copying

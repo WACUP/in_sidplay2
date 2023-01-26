@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2016 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -24,14 +24,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
-
 #include <cstdio>
 
 #include "sidplayfp/siddefs.h"
@@ -39,6 +32,7 @@
 #include "sidplayfp/SidTuneInfo.h"
 
 #include "SidInfoImpl.h"
+#include "sidrandom.h"
 #include "mixer.h"
 #include "c64/c64.h"
 
@@ -46,10 +40,9 @@
 #  include "config.h"
 #endif
 
-#ifdef PC64_TESTSUITE
-#  include <string>
+#ifdef HAVE_CXX11
+#  include <atomic>
 #endif
-
 #include <vector>
 
 class SidTune;
@@ -61,9 +54,6 @@ namespace libsidplayfp
 {
 
 class Player
-#ifdef PC64_TESTSUITE
-  : public testEnv
-#endif
 {
 private:
     typedef enum
@@ -92,7 +82,13 @@ private:
     /// Error message
     const char *m_errorString;
 
+#ifndef HAVE_CXX11
     volatile state_t m_isPlaying;
+#else
+    std::atomic<state_t> m_isPlaying;
+#endif
+
+    sidrandom m_rand;
 
     /// PAL/NTSC switch value
     uint8_t videoSwitch;
@@ -120,11 +116,11 @@ private:
 
     /**
      * Create the SID emulation(s).
-     * ZR: added configuration object to allow select second sid model
+     *
      * @throw configError
      */
-    void sidCreate(sidbuilder *builder, SidConfig::sid_model_t defaultModel,
-                    bool forced, const std::vector<unsigned int> &extraSidAddresses, const SidConfig& cfg);
+    void sidCreate(sidbuilder *builder, SidConfig::sid_model_t defaultModel, bool digiboost,
+                    bool forced, const std::vector<unsigned int> &extraSidAddresses);
 
     /**
      * Set the SID emulation parameters.
@@ -136,10 +132,6 @@ private:
      */
     void sidParams(double cpuFreq, int frequency,
                     SidConfig::sampling_method_t sampling, bool fastSampling);
-
-#ifdef PC64_TESTSUITE
-    void load(const char *file);
-#endif
 
     inline void run(unsigned int events);
 
@@ -157,15 +149,13 @@ public:
 
     bool load(SidTune *tune);
 
-    double cpuFreq() const { return m_c64.getMainCpuSpeed(); }
-
     uint_least32_t play(short *buffer, uint_least32_t samples);
 
     bool isPlaying() const { return m_isPlaying != STOPPED; }
 
     void stop();
 
-    uint_least32_t time() const { return static_cast<uint_least32_t>(m_c64.getEventScheduler().getTime(EVENT_CLOCK_PHI1) / cpuFreq()); }
+    uint_least32_t timeMs() const { return m_c64.getTimeMs(); }
 
     void debug(const bool enable, FILE *out) { m_c64.debug(enable, out); }
 
@@ -173,9 +163,13 @@ public:
 
     const char *error() const { return m_errorString; }
 
-    void setRoms(const uint8_t* kernal, const uint8_t* basic, const uint8_t* character);
+    void setKernal(const uint8_t* rom);
+    void setBasic(const uint8_t* rom);
+    void setChargen(const uint8_t* rom);
 
     uint_least16_t getCia1TimerA() const { return m_c64.getCia1TimerA(); }
+
+    bool getSidStatus(unsigned int sidNum, uint8_t regs[32]);
 };
 
 }

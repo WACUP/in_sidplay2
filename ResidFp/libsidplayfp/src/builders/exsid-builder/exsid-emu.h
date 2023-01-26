@@ -30,11 +30,6 @@
 namespace libsidplayfp
 {
 
-#define EXSID_VOICES 3
-
-// Approx 30ms
-#define EXSID_DELAY_CYCLES 50480
-
 /***************************************************************************
  * exSID SID Specialisation
  ***************************************************************************/
@@ -45,6 +40,7 @@ private:
 
     // exSID specific data
     static unsigned int sid;
+    void * exsid;
 
     bool m_status;
 
@@ -77,11 +73,14 @@ public:
     // Standard SID functions
     void clock() override;
 
-    void model(SidConfig::sid_model_t model) override;
+    void model(SidConfig::sid_model_t model, bool digiboost) override;
 
     void voice(unsigned int num, bool mute) override;
 
-    void filter(bool enable) {}
+    void filter(bool) {}
+
+    void sampling(float systemclock, float freq,
+        SidConfig::sampling_method_t method, bool) override;
 
     // exSID specific
     void flush();

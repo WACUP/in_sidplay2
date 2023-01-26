@@ -36,7 +36,7 @@ namespace reSIDfp
  *         |   |       |   |   |      |   Termination
  *        2R  2R      2R  2R  2R     2R   only for
  *         |   |       |   |   |      |   MOS 8580
- *     Vo  --R---R--...--R---R--    ---
+ *     Vo -o-R-o-R-...-o-R-o-R--    --+
  *
  *
  * All MOS 6581 DACs are missing a termination resistor at bit 0. This causes
@@ -52,6 +52,25 @@ namespace reSIDfp
  * The MOS 8580 DACs, on the other hand, do not exhibit any discontinuities.
  * These DACs include the correct termination resistor, and also seem to have
  * very accurately matched R and 2R resistors (2R/R = 2.00).
+ *
+ * On the 6581 the output of the waveform and envelope DACs go through
+ * a voltage follower built with two NMOS:
+ *
+ *             Vdd
+ *
+ *              |
+ *            |-+
+ * Vin -------|    T1 (enhancement-mode)
+ *            |-+
+ *              |
+ *              o-------- Vout
+ *              |
+ *            |-+
+ *        +---|    T2 (depletion-mode)
+ *        |   |-+
+ *        |     |
+ *
+ *       GND   GND
  */
 class Dac
 {

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- *  Copyright (C) 2014 Leandro Nini
+ *  Copyright (C) 2014-2020 Leandro Nini
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -21,11 +21,14 @@
 #include "UnitTest++/UnitTest++.h"
 #include "UnitTest++/TestReporter.h"
 
+#include "../src/builders/residfp-builder/residfp/Dac.cpp"
+
 #define private public
 #define protected public
 #define class struct
 
 #include "../src/builders/residfp-builder/residfp/EnvelopeGenerator.h"
+#include "../src/builders/residfp-builder/residfp/EnvelopeGenerator.cpp"
 
 using namespace UnitTest;
 
@@ -35,7 +38,11 @@ SUITE(EnvelopeGenerator)
 struct TestFixture
 {
     // Test setup
-    TestFixture() { generator.reset(); }
+    TestFixture()
+    {
+        generator.reset();
+        generator.envelope_counter = 0;
+    }
 
     reSIDfp::EnvelopeGenerator generator;
 };
@@ -47,23 +54,29 @@ TEST_FIXTURE(TestFixture, TestADSRDelayBug)
     // to zero at 2^15 = 0x8000, and then count rate_period - 1 before the
     // envelope can constly be stepped.
 
-    generator.writeCONTROL_REG(0x01);
-
-    generator.writeATTACK_DECAY(0xf0);
-
-    for (int i=0; i<0x4000; i++)
-    {
-        generator.clock();
-    }
-
     generator.writeATTACK_DECAY(0x70);
 
-    for (int i=0; i<0x4000; i++)
+    generator.writeCONTROL_REG(0x01);
+
+    // wait 200 cycles
+    for (int i=0; i<200; i++)
     {
         generator.clock();
     }
 
-    CHECK_EQUAL(0, (int)generator.readENV());
+    CHECK_EQUAL(1, (int)generator.readENV());
+
+    // set lower Attack time
+    // should theoretically clock after 63 cycles
+    generator.writeATTACK_DECAY(0x20);
+
+    // wait another 200 cycles
+    for (int i=0; i<200; i++)
+    {
+        generator.clock();
+    }
+
+    CHECK_EQUAL(1, (int)generator.readENV());
 }
 
 TEST_FIXTURE(TestFixture, TestFlipFFto00)
@@ -73,27 +86,31 @@ TEST_FIXTURE(TestFixture, TestFlipFFto00)
     // zero; to unlock this situation the state must be changed to release,
     // then to attack.
 
+    generator.writeATTACK_DECAY(0x77);
+    generator.writeSUSTAIN_RELEASE(0x77);
+
     generator.writeCONTROL_REG(0x01);
 
-    generator.writeATTACK_DECAY(0xff);
-
-    for (int i=0; i<0x7a13*0xff; i++)
+    do
     {
         generator.clock();
-    }
-
-    CHECK_EQUAL(0xff, (int)generator.readENV());
+    } while ((int)generator.readENV() != 0xff);
 
     generator.writeCONTROL_REG(0x00);
+    // run for three clocks, accounting for state pipeline
+    generator.clock();
+    generator.clock();
+    generator.clock();
     generator.writeCONTROL_REG(0x01);
 
-    for (int i=0; i<0x7a13; i++)
+    // wait at least 313 cycles
+    // so the counter is clocked once
+    for (int i=0; i<315; i++)
     {
         generator.clock();
     }
 
     CHECK_EQUAL(0, (int)generator.readENV());
-    CHECK(generator.hold_zero);
 }
 
 TEST_FIXTURE(TestFixture, TestFlip00toFF)
@@ -102,22 +119,28 @@ TEST_FIXTURE(TestFixture, TestFlip00toFF)
     // attack, then to release. The envelope counter will then continue
     // counting down in the release state.
 
-    generator.writeATTACK_DECAY(0xff);
-    generator.writeSUSTAIN_RELEASE(0xff);
+    generator.counter_enabled = false;
 
-    generator.hold_zero = false;
-
+    generator.writeATTACK_DECAY(0x77);
+    generator.writeSUSTAIN_RELEASE(0x77);
+    generator.clock();
     CHECK_EQUAL(0, (int)generator.readENV());
 
     generator.writeCONTROL_REG(0x01);
+    // run for three clocks, accounting for state pipeline
+    generator.clock();
+    generator.clock();
+    generator.clock();
     generator.writeCONTROL_REG(0x00);
-    for (int i=0; i<0x7a13; i++)
+
+    // wait at least 313 cycles
+    // so the counter is clocked once
+    for (int i=0; i<315; i++)
     {
         generator.clock();
     }
 
     CHECK_EQUAL(0xff, (int)generator.readENV());
-    CHECK(!generator.hold_zero);
 }
 
 }

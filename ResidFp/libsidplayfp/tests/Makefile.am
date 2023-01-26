@@ -5,35 +5,37 @@ if ENABLE_TEST
 
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src \
--I$(top_builddir)/src/builders/residfp-builder/residfp
+-I$(top_builddir)/src/builders/residfp-builder/residfp \
+$(UNITTEST_CFLAGS)
 
-AM_LDFLAGS = @unittest_libs@
+AM_LDFLAGS = $(UNITTEST_LIBS)
 
 TESTS = \
 TestEnvelopeGenerator \
+TestWaveformGenerator \
 TestSpline \
 TestDac \
 TestPSID \
-TestMUS
+TestMUS \
+TestMos6510
 
 check_PROGRAMS = $(TESTS)
 
 TestEnvelopeGenerator_SOURCES = \
 Main.cpp \
 TestEnvelopeGenerator.cpp
-TestEnvelopeGenerator_LDADD = \
-$(top_builddir)/src/builders/residfp-builder/residfp/EnvelopeGenerator.o \
-$(top_builddir)/src/builders/residfp-builder/residfp/Dac.o
+
+TestWaveformGenerator_SOURCES = \
+Main.cpp \
+TestWaveformGenerator.cpp
 
 TestSpline_SOURCES = \
 Main.cpp \
 TestSpline.cpp
-TestSpline_LDADD = $(top_builddir)/src/builders/residfp-builder/residfp/Spline.o
 
 TestDac_SOURCES = \
 Main.cpp \
 TestDac.cpp
-TestDac_LDADD = $(top_builddir)/src/builders/residfp-builder/residfp/Dac.o
 
 TestPSID_SOURCES = \
 Main.cpp \
@@ -44,5 +46,9 @@ TestMUS_SOURCES = \
 Main.cpp \
 TestMUS.cpp
 TestMUS_LDADD = $(top_builddir)/src/libsidplayfp.la
+
+TestMos6510_SOURCES = \
+Main.cpp \
+TestMos6510.cpp
 
 endif

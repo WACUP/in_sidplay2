@@ -116,38 +116,31 @@
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</CompileAsManaged>
     </ClCompile>
     <ClCompile Include="helpers.cpp" />
-    <ClCompile Include="in_sidplay2.cpp" />
     <ClCompile Include="infoDlg.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="in_sidplay2.cpp" />
     <ClCompile Include="StilBlock.cpp" />
     <ClCompile Include="subSongDlg.cpp" />
+    <ClCompile Include="ThreadSidDecoder.cpp" />
     <ClCompile Include="ThreadSidPlayer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="aboutDlg.h" />
     <ClInclude Include="c64roms.h" />
     <ClInclude Include="configDlg.h" />
     <ClInclude Include="helpers.h" />
     <ClInclude Include="infoDlg.h" />
+    <ClInclude Include="pstdint.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="StilBlock.h" />
-    <ClInclude Include="targetver.h" />
+    <ClInclude Include="subSongDlg.h" />
+    <ClInclude Include="ThreadSidDecoder.h" />
     <ClInclude Include="ThreadSidPlayer.h" />
     <ClInclude Include="typesdefs.h" />
-    <ClInclude Include="IN2.H" />
-    <ClInclude Include="ipc_pe.h" />
-    <ClInclude Include="OUT.H" />
-    <ClInclude Include="wa_ipc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="in_sidplay2.def" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="in_sidplay2.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

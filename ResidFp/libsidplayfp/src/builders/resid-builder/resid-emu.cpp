@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2015 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2019 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -93,7 +93,7 @@ void ReSID::write(uint_least8_t addr, uint8_t data)
 
 void ReSID::clock()
 {
-    reSID::cycle_count cycles = eventScheduler->getTime(m_accessClk, EVENT_CLOCK_PHI1);
+    reSID::cycle_count cycles = eventScheduler->getTime(EVENT_CLOCK_PHI1) - m_accessClk;
     m_accessClk += cycles;
     m_bufferpos += m_sid.clock(cycles, (short *) m_buffer + m_bufferpos, OUTPUTBUFFERSIZE - m_bufferpos, 1);
 }
@@ -142,9 +142,11 @@ void ReSID::voice(unsigned int num, bool mute)
 }
 
 // Set the emulated SID model
-void ReSID::model(SidConfig::sid_model_t model)
+void ReSID::model(SidConfig::sid_model_t model, bool digiboost)
 {
     reSID::chip_model chipModel;
+    short sample = 0;
+    m_voiceMask &= 0x07;
     switch (model)
     {
         case SidConfig::MOS6581:
@@ -152,12 +154,12 @@ void ReSID::model(SidConfig::sid_model_t model)
             break;
         case SidConfig::MOS8580:
             chipModel = reSID::MOS8580;
+            if (digiboost)
+            {
+                m_voiceMask |= 0x08;
+                sample = -32768;
+            }
             break;
-        /* MOS8580 + digi boost
-        *      chipModel = (RESID_NS::MOS8580);
-        *      m_sid.set_voice_mask(0x0f);
-        *      m_sid.input(-32768);
-        */
         default:
             m_status = false;
             m_error = ERR_INVALID_CHIP;
@@ -165,6 +167,8 @@ void ReSID::model(SidConfig::sid_model_t model)
     }
 
     m_sid.set_chip_model(chipModel);
+    m_sid.set_voice_mask(m_voiceMask);
+    m_sid.input(sample);
     m_status = true;
 }
 

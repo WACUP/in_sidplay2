@@ -23,16 +23,11 @@
 #ifndef ZERORAMBANK_H
 #define ZERORAMBANK_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "Bank.h"
 #include "SystemRAMBank.h"
+#include "pla.h"
 
 #include "Event.h"
 
@@ -40,20 +35,6 @@
 
 namespace libsidplayfp
 {
-
-/**
- * Interface to PLA functions.
- */
-class PLA
-{
-public:
-    virtual void setCpuPort(uint8_t state) =0;
-    virtual uint8_t getLastReadByte() const =0;
-    virtual event_clock_t getPhi2Time() const =0;
-
-protected:
-    ~PLA() {}
-};
 
 /**
  * Unused data port bits emulation, as investigated by groepaz:
@@ -119,7 +100,7 @@ public:
 
     uint8_t readBit(event_clock_t phi2time)
     {
-        if (isFallingOff && dataSetClk < phi2time)
+        if (isFallingOff && (dataSetClk < phi2time))
         {
             // discharge the "capacitor"
             reset();

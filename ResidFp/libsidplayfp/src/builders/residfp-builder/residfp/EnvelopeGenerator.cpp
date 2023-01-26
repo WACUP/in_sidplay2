@@ -1,7 +1,8 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2016 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2020 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2018 VICE Project
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2004,2010 Dag Lem <resid@nimrod.no>
  *
@@ -24,13 +25,20 @@
 
 #include "EnvelopeGenerator.h"
 
-#include "Dac.h"
-
 namespace reSIDfp
 {
 
-const unsigned int DAC_BITS = 8;
-
+/**
+ * Lookup table to convert from attack, decay, or release value to rate
+ * counter period.
+ *
+ * The rate counter is a 15 bit register which is left shifted each cycle.
+ * When the counter reaches a specific comparison value,
+ * the envelope counter is incremented (attack) or decremented
+ * (decay/release) and the rate counter is resetted.
+ *
+ * see [kevtris.org](http://blog.kevtris.org/?p=13)
+ */
 const unsigned int EnvelopeGenerator::adsrtable[16] =
 {
     0x007f,
@@ -51,66 +59,12 @@ const unsigned int EnvelopeGenerator::adsrtable[16] =
     0x64a8
 };
 
-void EnvelopeGenerator::set_exponential_counter()
-{
-    // Check for change of exponential counter period.
-    //
-    // For a detailed description see:
-    // http://ploguechipsounds.blogspot.it/2010/03/sid-6581r3-adsr-tables-up-close.html
-    switch (envelope_counter)
-    {
-    case 0xff:
-        exponential_counter_period = 1;
-        break;
-
-    case 0x5d:
-        exponential_counter_period = 2;
-        break;
-
-    case 0x36:
-        exponential_counter_period = 4;
-        break;
-
-    case 0x1a:
-        exponential_counter_period = 8;
-        break;
-
-    case 0x0e:
-        exponential_counter_period = 16;
-        break;
-
-    case 0x06:
-        exponential_counter_period = 30;
-        break;
-
-    case 0x00:
-        // FIXME: Check whether 0x00 really changes the period.
-        // E.g. set R = 0xf, gate on to 0x06, gate off to 0x00, gate on to 0x04,
-        // gate off, sample.
-        exponential_counter_period = 1;
-
-        // When the envelope counter is changed to zero, it is frozen at zero.
-        // This has been verified by sampling ENV3.
-        hold_zero = true;
-        break;
-    }
-}
-
-void EnvelopeGenerator::setChipModel(ChipModel chipModel)
-{
-    Dac dacBuilder(DAC_BITS);
-    dacBuilder.kinkedDac(chipModel);
-
-    for (unsigned int i = 0; i < (1 << DAC_BITS); i++)
-    {
-        dac[i] = static_cast<float>(dacBuilder.getOutput(i));
-    }
-}
-
 void EnvelopeGenerator::reset()
 {
-    envelope_counter = 0;
-    envelope_pipeline = false;
+    // counter is not changed on reset
+    envelope_pipeline = 0;
+
+    state_pipeline = 0;
 
     attack = 0;
     decay = 0;
@@ -119,49 +73,50 @@ void EnvelopeGenerator::reset()
 
     gate = false;
 
-    lfsr = 0x7fff;
+    resetLfsr = true;
+
     exponential_counter = 0;
     exponential_counter_period = 1;
+    new_exponential_counter_period = 0;
 
     state = RELEASE;
+    counter_enabled = true;
     rate = adsrtable[release];
-    hold_zero = true;
 }
 
 void EnvelopeGenerator::writeCONTROL_REG(unsigned char control)
 {
     const bool gate_next = (control & 0x01) != 0;
 
-    if (gate_next == gate)
-        return;
-
-    // The rate counter is never reset, thus there will be a delay before the
-    // envelope counter starts counting up (attack) or down (release).
-
-    if (gate_next)
+    if (gate_next != gate)
     {
-        // Gate bit on: Start attack, decay, sustain.
-        state = ATTACK;
-        // FIXME: there's a single cycle where SID is using the rate from 'decay' rather than attack
-        // http://csdb.dk/forums/?roomid=14&topicid=110119&showallposts=1
-        rate = adsrtable[attack];
+        gate = gate_next;
 
-        // Switching to attack state unlocks the zero freeze and aborts any
-        // pipelined envelope decrement.
-        hold_zero = false;
+        // The rate counter is never reset, thus there will be a delay before the
+        // envelope counter starts counting up (attack) or down (release).
 
-        // FIXME: This is an assumption which should be checked using cycle exact
-        // envelope sampling.
-        envelope_pipeline = false;
+        if (gate_next)
+        {
+            // Gate bit on:  Start attack, decay, sustain.
+            next_state = ATTACK;
+            state_pipeline = 2;
+
+            if (resetLfsr || (exponential_pipeline == 2))
+            {
+                envelope_pipeline = (exponential_counter_period == 1) || (exponential_pipeline == 2) ? 2 : 4;
+            }
+            else if (exponential_pipeline == 1)
+            {
+                state_pipeline = 3;
+            }
+        }
+        else
+        {
+            // Gate bit off: Start release.
+            next_state = RELEASE;
+            state_pipeline = envelope_pipeline > 0 ? 3 : 2;
+        }
     }
-    else
-    {
-        // Gate bit off: Start release.
-        state = RELEASE;
-        rate = adsrtable[release];
-    }
-
-    gate = gate_next;
 }
 
 void EnvelopeGenerator::writeATTACK_DECAY(unsigned char attack_decay)

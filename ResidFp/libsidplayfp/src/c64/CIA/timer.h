@@ -23,13 +23,7 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "Event.h"
 #include "EventCallback.h"
@@ -40,7 +34,7 @@
 namespace libsidplayfp
 {
 
-class MOS6526;
+class MOS652X;
 
 /**
  * This is the base class for the MOS6526 timers.
@@ -95,7 +89,7 @@ private:
 
 protected:
     /// Pointer to the MOS6526 which this Timer belongs to.
-    MOS6526 &parent;
+    MOS652X &parent;
 
     /// CRA/CRB control register / state.
     int_least32_t state;
@@ -141,7 +135,7 @@ protected:
      * @param context event context
      * @param parent the MOS6526 which this Timer belongs to
      */
-    Timer(const char* name, EventScheduler &scheduler, MOS6526 &parent) :
+    Timer(const char* name, EventScheduler &scheduler, MOS652X &parent) :
         Event(name),
         m_cycleSkippingEvent("Skip CIA clock decrement cycles", *this, &Timer::cycleSkippingEvent),
         eventScheduler(scheduler),

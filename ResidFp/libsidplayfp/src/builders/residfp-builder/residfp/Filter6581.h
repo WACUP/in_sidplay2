@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2015 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2004,2010 Dag Lem <resid@nimrod.no>
  *
@@ -28,14 +28,14 @@
 #include <memory>
 
 #include "Filter.h"
-#include "FilterModelConfig.h"
+#include "FilterModelConfig6581.h"
 
 #include "sidcxx11.h"
 
 namespace reSIDfp
 {
 
-class Integrator;
+class Integrator6581;
 
 /**
  * The SID filter is modeled with a two-integrator-loop biquadratic filter,
@@ -85,43 +85,43 @@ class Integrator;
  * SID filter / mixer / output
  * ---------------------------
  * ~~~
- *                ---------------------------------------------------
+ *               +---------------------------------------------------+
  *               |                                                   |
- *               |                         --1R1-- \--  D7           |
- *               |              ---R1--   |           |              |
- *               |             |       |  |--2R1-- \--| D6           |
- *               |    ------------<A]-----|           |     $17      |
- *               |   |                    |--4R1-- \--| D5  1=open   | (3.5R1)
+ *               |                        +--1R1-- \--+ D7           |
+ *               |             +---R1--+  |           |              |
+ *               |             |       |  o--2R1-- \--o D6           |
+ *               |   +---------o--<A]--o--o           |     $17      |
+ *               |   |                    o--4R1-- \--o D5  1=open   | (3.5R1)
  *               |   |                    |           |              |
- *               |   |                     --8R1-- \--| D4           | (7.0R1)
+ *               |   |                    +--8R1-- \--o D4           | (7.0R1)
  *               |   |                                |              |
  * $17           |   |                    (CAP2B)     |  (CAP1B)     |
- * 0=to mixer    |    --R8--    ---R8--        ---C---|       ---C---| 
+ * 0=to mixer    |   +--R8--+  +---R8--+      +---C---o      +---C---o
  * 1=to filter   |          |  |       |      |       |      |       |
- *                ------R8--|-----[A>--|--Rw-----[A>--|--Rw-----[A>--|
+ *                ------R8--o--o--[A>--o--Rw--o--[A>--o--Rw--o--[A>--o
  *     ve (EXT IN)          |          |              |              |
- * D3  \ ---------------R8--|          |              | (CAP2A)      | (CAP1A)
+ * D3  \ ---------------R8--o          |              | (CAP2A)      | (CAP1A)
  *     |   v3               |          | vhp          | vbp          | vlp
- * D2  |   \ -----------R8--|     -----               |              |
+ * D2  |   \ -----------R8--o    +-----+              |              |
  *     |   |   v2           |    |                    |              |
- * D1  |   |   \ -------R8--|    |    ----------------               |
+ * D1  |   |   \ -------R8--o    |   +----------------+              |
  *     |   |   |   v1       |    |   |                               |
- * D0  |   |   |   \ ---R8--     |   |    ---------------------------
+ * D0  |   |   |   \ ---R8--+    |   |   +---------------------------+
  *     |   |   |   |             |   |   |
  *     R6  R6  R6  R6            R6  R6  R6
  *     |   |   |   | $18         |   |   |  $18
  *     |    \  |   | D7: 1=open   \   \   \ D6 - D4: 0=open
  *     |   |   |   |             |   |   |
- *      ---------------------------------                          12V
+ *     +---o---o---o-------------o---o---+                         12V
  *                 |
- *                 |               D3  --/ --1R2--                  |
- *                 |    ---R8--       |           |   ---R2--       |
- *                 |   |       |   D2 |--/ --2R2--|  |       |  ||--
- *                  ------[A>---------|           |-----[A>-----||
- *                                 D1 |--/ --4R2--| (4.25R2)    ||--
+ *                 |               D3 +--/ --1R2--+                 |
+ *                 |   +---R8--+      |           |  +---R2--+      |
+ *                 |   |       |   D2 o--/ --2R2--o  |       |  ||--+
+ *                 +---o--[A>--o------o           o--o--[A>--o--||
+ *                                 D1 o--/ --4R2--o (4.25R2)    ||--+
  *                        $18         |           |                 |
- *                        0=open   D0  --/ --8R2--  (8.75R2)        |
- * 
+ *                        0=open   D0 +--/ --8R2--+ (8.75R2)        |
+ *
  *                                                                  vo (AUDIO
  *                                                                      OUT)
  *
@@ -165,18 +165,18 @@ class Integrator;
  * ------------------------------------------
  * ~~~
  *                Vw
- * 
+ *
  *                |
  *                |
  *                R1
  *                |
- *          --R1--|
+ *         +--R1--o
  *         |    __|__
  *         |    -----
  *         |    |   |
- * vi ----------     -------- vo
+ * vi -----o----+   +--o----- vo
  *         |           |
- *          ----R24----
+ *         +----R24----+
  *
  *
  * vi  - input
@@ -210,9 +210,9 @@ class Integrator;
  * Note that these are only approximate values for one particular SID chip,
  * due to process variations the values can be substantially different in
  * other chips.
- * 
- * 
- * 
+ *
+ *
+ *
  * Filter frequency cutoff DAC
  * ---------------------------
  *
@@ -221,7 +221,7 @@ class Integrator;
  *      |   |   |   |   |   |   |   |   |   |   |   |     |   Missing
  *     2R  2R  2R  2R  2R  2R  2R  2R  2R  2R  2R  2R    2R   termination
  *      |   |   |   |   |   |   |   |   |   |   |   |     |
- * Vw ----R---R---R---R---R---R---R---R---R---R---R--   ---
+ * Vw --o-R-o-R-o-R-o-R-o-R-o-R-o-R-o-R-o-R-o-R-o-R-o-   -+
  *
  *
  * Bit on:  12V
@@ -241,31 +241,31 @@ class Integrator;
  * ~~~
  *
  *                        12V
- * 
+ *
  *                         |
- *              -----------|
+ *             +-----------o
  *             |           |
- *             |     ------|
+ *             |    +------o
  *             |    |      |
- *             |    |  ||--
- *             |     --||
- *             |       ||--
- *         ||--            |
- * vi -----||              |--------- vo
- *         ||--            |   |
- *             |       ||--    |
+ *             |    |  ||--+
+ *             |    +--||
+ *             |       ||--+
+ *         ||--+           |
+ * vi -----||              o---o----- vo
+ *         ||--+           |   |
+ *             |       ||--+   |
  *             |-------||      |
- *             |       ||--    |
- *         ||--            |   |
- *       --||              |   |
- *      |  ||--            |   |
+ *             |       ||--+   |
+ *         ||--+           |   |
+ *      +--||              |   |
+ *      |  ||--+           |   |
  *      |      |           |   |
- *      |       -----------|   |
+ *      |      +-----------o   |
  *      |                  |   |
  *      |                      |
  *      |                 GND  |
  *      |                      |
- *       ----------------------
+ *      +----------------------+
  *
  *
  * vi  - input
@@ -293,11 +293,11 @@ class Integrator;
  * 
  *             |
  *             |
- *         ||--
+ *         ||--+
  * vi -----||
- *         ||--
+ *         ||--+
  *             |
- *             |------ vo
+ *             o------ vo
  *             |     (AUDIO
  *            Rext    OUT)
  *             |
@@ -322,73 +322,23 @@ class Integrator;
 class Filter6581 final : public Filter
 {
 private:
-    /// Current volume amplifier setting.
-    unsigned short* currentGain;
-
-    /// Current filter/voice mixer setting.
-    unsigned short* currentMixer;
-
-    /// Filter input summer setting.
-    unsigned short* currentSummer;
-
-    /// Filter resonance value.
-    unsigned short* currentResonance;
-
     const unsigned short* f0_dac;
 
     unsigned short** mixer;
     unsigned short** summer;
-    unsigned short** gain;
+    unsigned short** gain_res;
+    unsigned short** gain_vol;
 
-    /// Filter highpass state.
-    int Vhp;
-
-    /// Filter bandpass state.
-    int Vbp;
-
-    /// Filter lowpass state.
-    int Vlp;
-
-    /// Filter external input.
-    int ve;
-
-    const int voiceScaleS14;
+    const int voiceScaleS11;
     const int voiceDC;
 
     /// VCR + associated capacitor connected to highpass output.
-    std::unique_ptr<Integrator> const hpIntegrator;
+    std::unique_ptr<Integrator6581> const hpIntegrator;
 
-    /// VCR + associated capacitor connected to lowpass output.
-    std::unique_ptr<Integrator> const bpIntegrator;
+    /// VCR + associated capacitor connected to bandpass output.
+    std::unique_ptr<Integrator6581> const bpIntegrator;
 
-public:
-    Filter6581() :
-        currentGain(nullptr),
-        currentMixer(nullptr),
-        currentSummer(nullptr),
-        currentResonance(nullptr),
-        f0_dac(FilterModelConfig::getInstance()->getDAC(0.5)),
-        mixer(FilterModelConfig::getInstance()->getMixer()),
-        summer(FilterModelConfig::getInstance()->getSummer()),
-        gain(FilterModelConfig::getInstance()->getGain()),
-        Vhp(0),
-        Vbp(0),
-        Vlp(0),
-        ve(0),
-        voiceScaleS14(FilterModelConfig::getInstance()->getVoiceScaleS14()),
-        voiceDC(FilterModelConfig::getInstance()->getVoiceDC()),
-        hpIntegrator(FilterModelConfig::getInstance()->buildIntegrator()),
-        bpIntegrator(FilterModelConfig::getInstance()->buildIntegrator())
-    {
-        input(0);
-    }
-
-    ~Filter6581();
-
-    int clock(int voice1, int voice2, int voice3) override;
-
-    void input(int sample) override { ve = (sample * voiceScaleS14 * 3 >> 10) + mixer[0][0]; }
-
+protected:
     /**
      * Set filter cutoff frequency.
      */
@@ -399,11 +349,31 @@ public:
      *
      * In the MOS 6581, 1/Q is controlled linearly by res.
      */
-    void updateResonance(unsigned char res) override { currentResonance = gain[~res & 0xf]; }
+    void updateResonance(unsigned char res) override { currentResonance = gain_res[res]; }
 
     void updatedMixing() override;
 
 public:
+    Filter6581() :
+        f0_dac(FilterModelConfig6581::getInstance()->getDAC(0.5)),
+        mixer(FilterModelConfig6581::getInstance()->getMixer()),
+        summer(FilterModelConfig6581::getInstance()->getSummer()),
+        gain_res(FilterModelConfig6581::getInstance()->getGainRes()),
+        gain_vol(FilterModelConfig6581::getInstance()->getGainVol()),
+        voiceScaleS11(FilterModelConfig6581::getInstance()->getVoiceScaleS11()),
+        voiceDC(FilterModelConfig6581::getInstance()->getNormalizedVoiceDC()),
+        hpIntegrator(FilterModelConfig6581::getInstance()->buildIntegrator()),
+        bpIntegrator(FilterModelConfig6581::getInstance()->buildIntegrator())
+    {
+        input(0);
+    }
+
+    ~Filter6581();
+
+    unsigned short clock(int voice1, int voice2, int voice3) override;
+
+    void input(int sample) override { ve = (sample * voiceScaleS11 * 3 >> 11) + mixer[0][0]; }
+
     /**
      * Set filter curve type based on single parameter.
      *
@@ -416,40 +386,36 @@ public:
 
 #if RESID_INLINING || defined(FILTER6581_CPP)
 
-#include "Integrator.h"
+#include "Integrator6581.h"
 
 namespace reSIDfp
 {
 
 RESID_INLINE
-int Filter6581::clock(int voice1, int voice2, int voice3)
+unsigned short Filter6581::clock(int voice1, int voice2, int voice3)
 {
-    voice1 = (voice1 * voiceScaleS14 >> 18) + voiceDC;
-    voice2 = (voice2 * voiceScaleS14 >> 18) + voiceDC;
-    voice3 = (voice3 * voiceScaleS14 >> 18) + voiceDC;
+    voice1 = (voice1 * voiceScaleS11 >> 15) + voiceDC;
+    voice2 = (voice2 * voiceScaleS11 >> 15) + voiceDC;
+    // Voice 3 is silenced by voice3off if it is not routed through the filter.
+    voice3 = (filt3 || !voice3off) ? (voice3 * voiceScaleS11 >> 15) + voiceDC : 0;
 
     int Vi = 0;
     int Vo = 0;
 
     (filt1 ? Vi : Vo) += voice1;
     (filt2 ? Vi : Vo) += voice2;
-
-    // NB! Voice 3 is not silenced by voice3off if it is routed
-    // through the filter.
-    if (filt3) Vi += voice3;
-    else if (!voice3off) Vo += voice3;
-
+    (filt3 ? Vi : Vo) += voice3;
     (filtE ? Vi : Vo) += ve;
 
-    Vlp = bpIntegrator->solve(Vbp);
-    Vbp = hpIntegrator->solve(Vhp);
     Vhp = currentSummer[currentResonance[Vbp] + Vlp + Vi];
+    Vbp = hpIntegrator->solve(Vhp);
+    Vlp = bpIntegrator->solve(Vbp);
 
     if (lp) Vo += Vlp;
     if (bp) Vo += Vbp;
     if (hp) Vo += Vhp;
 
-    return currentGain[currentMixer[Vo]] - (1 << 15);
+    return currentGain[currentMixer[Vo]];
 }
 
 } // namespace reSIDfp

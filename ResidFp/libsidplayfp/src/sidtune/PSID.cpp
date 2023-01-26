@@ -358,7 +358,7 @@ void PSID::tryLoad(const psidHeader &pHeader)
         throw loadError("Compute!'s Sidplayer MUS data is not supported yet"); // TODO
 }
 
-const char *PSID::createMD5(char *md5)
+/*const char *PSID::createMD5(char *md5)
 {
     if (md5 == nullptr)
         md5 = m_md5;
@@ -413,6 +413,34 @@ const char *PSID::createMD5(char *md5)
         // either create two different fingerprints depending on
         // the clock speed chosen by the player, or there could be
         // two different values stored in the database/cache.
+
+        myMD5.finish();
+
+        // Get fingerprint.
+        myMD5.getDigest().copy(md5, SidTune::MD5_LENGTH);
+        md5[SidTune::MD5_LENGTH] = '\0';
+    }
+    catch (md5Error const &)
+    {
+        return nullptr;
+    }
+
+    return md5;
+}*/
+
+const char *PSID::createMD5New(char *md5)
+{
+    if (md5 == nullptr)
+        md5 = m_md5;
+
+    *md5 = '\0';
+
+    try
+    {
+        // The calculation is now simplified
+        // All the header + all the data
+        sidmd5 myMD5;
+        myMD5.append(&cache[0], cache.size());
 
         myMD5.finish();
 

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2016 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -62,22 +62,27 @@ const uint8_t* player2 = sidplayer2 + o65headersize;
 const size_t player1size = sizeof(sidplayer1) - o65headersize;
 const size_t player2size = sizeof(sidplayer2) - o65headersize;
 
-bool detect(const uint8_t* buffer, uint_least32_t bufLen,
-                         uint_least32_t& voice3Index)
+bool detect(const uint8_t* buffer, size_t bufsize, uint_least32_t& voice3Index)
 {
-    SmartPtr_sidtt<const uint8_t> spMus(buffer, bufLen);
+    // sanity check
+    if ((buffer == nullptr) || (bufsize < 8))
+        return false;
+
     // Skip load address and 3x length entry.
     uint_least32_t voice1Index = 2 + 3 * 2;
     // Add length of voice 1 data.
-    voice1Index += endian_16(spMus[3], spMus[2]);
+    voice1Index += endian_little16(&buffer[2]);
     // Add length of voice 2 data.
-    uint_least32_t voice2Index = voice1Index + endian_16(spMus[5], spMus[4]);
+    uint_least32_t voice2Index = voice1Index + endian_little16(&buffer[4]);
     // Add length of voice 3 data.
-    voice3Index = voice2Index + endian_16(spMus[7], spMus[6]);
-    return ((endian_16(spMus[voice1Index - 2], spMus[voice1Index + 1 - 2]) == SIDTUNE_MUS_HLT_CMD)
-            && (endian_16(spMus[voice2Index - 2], spMus[voice2Index + 1 - 2]) == SIDTUNE_MUS_HLT_CMD)
-            && (endian_16(spMus[voice3Index - 2], spMus[voice3Index + 1 - 2]) == SIDTUNE_MUS_HLT_CMD)
-            && spMus);
+    voice3Index = voice2Index + endian_little16(&buffer[6]);
+
+    if (voice3Index > bufsize)
+        return false;
+
+    return ((endian_big16(&buffer[voice1Index - 2]) == SIDTUNE_MUS_HLT_CMD)
+            && (endian_big16(&buffer[voice2Index - 2]) == SIDTUNE_MUS_HLT_CMD)
+            && (endian_big16(&buffer[voice3Index - 2]) == SIDTUNE_MUS_HLT_CMD));
 }
 
 void MUS::setPlayerAddress()
@@ -131,12 +136,22 @@ bool MUS::mergeParts(buffer_t& musBuf, buffer_t& strBuf)
     return true;
 }
 
+/**
+ * Replace useless SID reads with NOPs.
+ */
+void removeReads(sidmemory& mem, uint_least16_t dest)
+{
+    const int sid_read_offset = 0x424 - o65headersize - 2;
+    mem.fillRam(dest + sid_read_offset, 0xea, 12);
+}
+
 void MUS::installPlayer(sidmemory& mem)
 {
     // Install MUS player #1.
     uint_least16_t dest = endian_16(player1[1], player1[0]);
 
     mem.fillRam(dest, player1 + 2, player1size - 2);
+    removeReads(mem, dest);
     // Point player #1 to data #1.
     mem.writeMemByte(dest + 0xc6e, (SIDTUNE_MUS_DATA_ADDR + 2) & 0xFF);
     mem.writeMemByte(dest + 0xc70, (SIDTUNE_MUS_DATA_ADDR + 2) >> 8);
@@ -146,6 +161,7 @@ void MUS::installPlayer(sidmemory& mem)
         // Install MUS player #2.
         dest = endian_16(player2[1], player2[0]);
         mem.fillRam(dest, player2 + 2, player2size - 2);
+        removeReads(mem, dest);
         // Point player #2 to data #2.
         mem.writeMemByte(dest + 0xc6e, (SIDTUNE_MUS_DATA_ADDR + musDataLen + 2) & 0xFF);
         mem.writeMemByte(dest + 0xc70, (SIDTUNE_MUS_DATA_ADDR + musDataLen + 2) >> 8);
@@ -164,12 +180,11 @@ SidTuneBase* MUS::load(buffer_t& musBuf,
                             bool init)
 {
     uint_least32_t voice3Index;
-    SmartPtr_sidtt<const uint8_t> spPet(&musBuf[fileOffset], musBuf.size() - fileOffset);
-    if (!detect(&spPet[0], spPet.tellLength(), voice3Index))
+    if (!detect(&musBuf[fileOffset], musBuf.size()-fileOffset, voice3Index))
         return nullptr;
 
     std::unique_ptr<MUS> tune(new MUS());
-    tune->tryLoad(musBuf, strBuf, spPet, voice3Index, init);
+    tune->tryLoad(musBuf, strBuf, fileOffset, voice3Index, init);
     tune->mergeParts(musBuf, strBuf);
 
     return tune.release();
@@ -177,7 +192,7 @@ SidTuneBase* MUS::load(buffer_t& musBuf,
 
 void MUS::tryLoad(buffer_t& musBuf,
                     buffer_t& strBuf,
-                    SmartPtr_sidtt<const uint8_t> &spPet,
+                    uint_least32_t fileOffset,
                     uint_least32_t voice3Index,
                     bool init)
 {
@@ -200,7 +215,7 @@ void MUS::tryLoad(buffer_t& musBuf,
 
     {
         // All subtunes should be CIA
-        for (uint_least16_t i = 0; i < info->m_songs; i++)
+        for (unsigned int i = 0; i < info->m_songs; i++)
         {
             if (songSpeed[i] != SidTuneInfo::SPEED_CIA_1A)
             {
@@ -209,14 +224,16 @@ void MUS::tryLoad(buffer_t& musBuf,
         }
     }
 
-    musDataLen = (uint_least16_t)musBuf.size();
+    musDataLen = musBuf.size();
     info->m_loadAddr = SIDTUNE_MUS_DATA_ADDR;
+
+    SmartPtr_sidtt<const uint8_t> spPet(&musBuf[fileOffset], musDataLen - fileOffset);
 
     // Voice3Index now is offset to text lines (uppercase Pet-strings).
     spPet += voice3Index;
 
     // Extract credits
-    while (spPet[0])
+    while (*spPet)
     {
         info->m_commentString.push_back(petsciiToAscii(spPet));
     }
@@ -239,7 +256,7 @@ void MUS::tryLoad(buffer_t& musBuf,
         if (spPet.good())
         {
             const ulint_smartpt pos = spPet.tellPos();
-            if (detect(&spPet[0], spPet.tellLength() - pos, voice3Index))
+            if (detect(&spPet[0], spPet.tellLength()-pos, voice3Index))
             {
                 musDataLen = static_cast<uint_least16_t>(pos);
                 stereo = true;
@@ -253,7 +270,7 @@ void MUS::tryLoad(buffer_t& musBuf,
         spPet += voice3Index;
 
         // Extract credits
-        while (spPet[0])
+        while (*spPet)
         {
             info->m_commentString.push_back(petsciiToAscii(spPet));
         }

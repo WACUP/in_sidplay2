@@ -42,22 +42,15 @@ class SidBank final : public Bank
 private:
     /// SID chip
     c64sid *sid;
-	/**
-	ZR: SID for pseudostereo
-	*/
-	c64sid *parallelSid;
+
 public:
     SidBank()
-      : sid(NullSid::getInstance()), parallelSid(NullSid::getInstance())
+      : sid(NullSid::getInstance())
     {}
 
     void reset()
     {
         sid->reset(0xf);
-		if (parallelSid != NULL)
-		{
-			parallelSid->reset(0xf);
-		}
     }
 
     uint8_t peek(uint_least16_t addr) override
@@ -68,10 +61,6 @@ public:
     void poke(uint_least16_t addr, uint8_t data) override
     {
         sid->poke(addr, data);
-		if (parallelSid != NULL)
-		{
-			parallelSid->poke(addr, data);
-		}
     }
 
     /**
@@ -79,12 +68,7 @@ public:
      *
      * @param s the emulation, nullptr to remove current sid
      */
-	void setSID(c64sid *s) { sid = (s != nullptr) ? s : NullSid::getInstance(); }
-
-	/**
-	ZR Add extra sid for pseudostereo
-	*/
-	void setParallelSID(c64sid *s) { parallelSid = (s != nullptr) ? s : NullSid::getInstance(); }
+    void setSID(c64sid *s) { sid = (s != nullptr) ? s : NullSid::getInstance(); }
 };
 
 }

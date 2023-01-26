@@ -21,13 +21,7 @@
 #ifndef MUS_H
 #define MUS_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "SidTuneBase.h"
 
@@ -47,7 +41,7 @@ private:
 
     void tryLoad(buffer_t& musBuf,
                     buffer_t& strBuf,
-                    SmartPtr_sidtt<const uint8_t> &spPet,
+                    uint_least32_t fileOffset,
                     uint_least32_t voice3Index,
                     bool init);
 

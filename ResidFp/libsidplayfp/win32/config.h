@@ -3,8 +3,8 @@
 #define _config_h_
 
 #define PACKAGE_NAME "libsidplayfp"
-#define PACKAGE_VERSION "2.0.0alpha"
+#define PACKAGE_VERSION "2.4.0-pre"
 #define PACKAGE_URL "http://sourceforge.net/projects/sidplay-residfp/"
-#define VERSION "2.0.0"
+#define VERSION "2.4.0-pre"
 
 #endif // _config_h_

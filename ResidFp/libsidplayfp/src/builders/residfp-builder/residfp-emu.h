@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2015 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2019 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2001 Simon White
  *
@@ -23,13 +23,7 @@
 #ifndef RESIDFP_EMU_H
 #define RESIDFP_EMU_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "residfp/SID.h"
 #include "sidplayfp/SidConfig.h"
@@ -72,7 +66,7 @@ public:
 
     void voice(unsigned int num, bool mute) override { m_sid.mute(num, mute); }
 
-    void model(SidConfig::sid_model_t model) override;
+    void model(SidConfig::sid_model_t model, bool digiboost) override;
 
     // Specific to resid
     void filter(bool enable);

@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- *  Copyright 2011-2015 Leandro Nini
+ *  Copyright 2011-2019 Leandro Nini
  *  Copyright 2007-2010 Antti Lankila
  *  Copyright 2000 Simon White
  *
@@ -23,13 +23,7 @@
 #ifndef SIDINFO_H
 #define SIDINFO_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "sidplayfp/siddefs.h"
 
@@ -63,8 +57,8 @@ public:
     /// Size of the driver in bytes
     uint_least16_t driverLength() const;
 
-    /// \deprecated Power on delay
-    SID_DEPRECATED uint_least16_t powerOnDelay() const;
+    /// Power on delay
+    uint_least16_t powerOnDelay() const;
 
     /// Describes the speed current song is running at
     const char *speedString() const;
@@ -91,6 +85,8 @@ private:
     virtual uint_least16_t getDriverAddr() const =0;
 
     virtual uint_least16_t getDriverLength() const =0;
+
+    virtual uint_least16_t getPowerOnDelay() const =0;
 
     virtual const char *getSpeedString() const =0;
 

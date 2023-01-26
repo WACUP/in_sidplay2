@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2015 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2021 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000 Simon White
  *
@@ -48,7 +48,6 @@ namespace libsidplayfp
 // Error and status message strings.
 const char ERR_EMPTY[]               = "SIDTUNE ERROR: No data to load";
 const char ERR_UNRECOGNIZED_FORMAT[] = "SIDTUNE ERROR: Could not determine file format";
-const char ERR_NOT_ENOUGH_MEMORY[]   = "SIDTUNE ERROR: Not enough free memory";
 const char ERR_CANT_LOAD_FILE[]      = "SIDTUNE ERROR: Could not load input file";
 const char ERR_CANT_OPEN_FILE[]      = "SIDTUNE ERROR: Could not open file for binary input";
 const char ERR_FILE_TOO_LONG[]       = "SIDTUNE ERROR: Input data too long";
@@ -56,6 +55,7 @@ const char ERR_DATA_TOO_LONG[]       = "SIDTUNE ERROR: Size of music data exceed
 const char ERR_BAD_ADDR[]            = "SIDTUNE ERROR: Bad address data";
 const char ERR_BAD_RELOC[]           = "SIDTUNE ERROR: Bad reloc data";
 const char ERR_CORRUPT[]             = "SIDTUNE ERROR: File is incomplete or corrupt";
+//const char ERR_NOT_ENOUGH_MEMORY[]   = "SIDTUNE ERROR: Not enough free memory";
 
 const char SidTuneBase::ERR_TRUNCATED[] = "SIDTUNE ERROR: File is most likely truncated";
 const char SidTuneBase::ERR_INVALID[]   = "SIDTUNE ERROR: File contains invalid data";
@@ -97,6 +97,12 @@ const uint_least16_t SIDTUNE_R64_MIN_LOAD_ADDR = 0x07e8;
 SidTuneBase* SidTuneBase::load(const char* fileName, const char **fileNameExt,
                  bool separatorIsSlash)
 {
+    return load(nullptr, fileName, fileNameExt, separatorIsSlash);
+}
+
+SidTuneBase* SidTuneBase::load(LoaderFunc loader, const char* fileName,
+                 const char **fileNameExt, bool separatorIsSlash)
+{
     if (fileName == nullptr)
         return nullptr;
 
@@ -105,7 +111,7 @@ SidTuneBase* SidTuneBase::load(const char* fileName, const char **fileNameExt,
     if (strcmp(fileName, "-") == 0)
         return getFromStdIn();
 #endif
-    return getFromFiles(fileName, fileNameExt, separatorIsSlash);
+    return getFromFiles(loader, fileName, fileNameExt, separatorIsSlash);
 }
 
 SidTuneBase* SidTuneBase::read(const uint_least8_t* sourceBuffer, uint_least32_t bufferLen)
@@ -126,14 +132,8 @@ const SidTuneInfo* SidTuneBase::getInfo(unsigned int songNum)
 
 unsigned int SidTuneBase::selectSong(unsigned int selectedSong)
 {
-    // First, check whether selected song is valid.
-    if (selectedSong > info->m_songs || selectedSong > MAX_SONGS)
-    {
-        return info->m_currentSong;
-    }
-
-    // Determine and set starting song number.
-    const unsigned int song = (selectedSong == 0) ? info->m_startSong : selectedSong;
+    // Check whether selected song is valid, use start song if not
+    const unsigned int song = (selectedSong == 0 || selectedSong > info->m_songs) ? info->m_startSong : selectedSong;
 
     // Copy any song-specific variable information
     // such a speed/clock setting to the info structure.
@@ -269,20 +269,11 @@ SidTuneBase* SidTuneBase::getFromBuffer(const uint_least8_t* const buffer, uint_
 
     // Here test for the possible single file formats.
     std::unique_ptr<SidTuneBase> s(PSID::load(buf1));
-    if (s.get() == nullptr)
-    {
-        buffer_t buf2;  // empty
-        s.reset(MUS::load(buf1, buf2, 0, true));
-    }
+    if (s.get() == nullptr) s.reset(MUS::load(buf1, true));
+    if (s.get() == nullptr) throw loadError(ERR_UNRECOGNIZED_FORMAT);
 
-    if (s.get() != nullptr)
-    {
-        s->acceptSidTune("-", "-", buf1, false);
-        return s.release();
-
-    }
-
-    throw loadError(ERR_UNRECOGNIZED_FORMAT);
+    s->acceptSidTune("-", "-", buf1, false);
+    return s.release();
 }
 
 void SidTuneBase::acceptSidTune(const char* dataFileName, const char* infoFileName,
@@ -373,18 +364,24 @@ void SidTuneBase::createNewFileName(std::string& destString,
 
 SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNameExtensions, bool separatorIsSlash)
 {
+    return getFromFiles(nullptr, fileName, fileNameExtensions, separatorIsSlash);
+}
+
+SidTuneBase* SidTuneBase::getFromFiles(LoaderFunc loader, const char* fileName, const char **fileNameExtensions, bool separatorIsSlash)
+{
     buffer_t fileBuf1;
 
-    loadFile(fileName, fileBuf1);
+    if (loader == nullptr)
+        loader = (LoaderFunc) loadFile;
+
+    loader(fileName, fileBuf1);
 
     // File loaded. Now check if it is in a valid single-file-format.
     std::unique_ptr<SidTuneBase> s(PSID::load(fileBuf1));
     if (s.get() == nullptr)
     {
-        buffer_t fileBuf2;
-
         // Try some native C64 file formats
-        s.reset(MUS::load(fileBuf1, fileBuf2, 0, true));
+        s.reset(MUS::load(fileBuf1, true));
         if (s.get() != nullptr)
         {
             // Try to find second file.
@@ -400,7 +397,9 @@ SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNa
                 {
                     try
                     {
-                        loadFile(fileName2.c_str(), fileBuf2);
+                        buffer_t fileBuf2;
+
+                        loader(fileName2.c_str(), fileBuf2);
                         // Check if tunes in wrong order and therefore swap them here
                         if (stringutils::equal(fileNameExtensions[n], ".mus"))
                         {
@@ -427,21 +426,14 @@ SidTuneBase* SidTuneBase::getFromFiles(const char* fileName, const char **fileNa
                 }
                 n++;
             }
-
-            s->acceptSidTune(fileName, nullptr, fileBuf1, separatorIsSlash);
-            return s.release();
         }
     }
     if (s.get() == nullptr) s.reset(p00::load(fileName, fileBuf1));
     if (s.get() == nullptr) s.reset(prg::load(fileName, fileBuf1));
+    if (s.get() == nullptr) throw loadError(ERR_UNRECOGNIZED_FORMAT);
 
-    if (s.get() != nullptr)
-    {
-        s->acceptSidTune(fileName, nullptr, fileBuf1, separatorIsSlash);
-        return s.release();
-    }
-
-    throw loadError(ERR_UNRECOGNIZED_FORMAT);
+    s->acceptSidTune(fileName, nullptr, fileBuf1, separatorIsSlash);
+    return s.release();
 }
 
 void SidTuneBase::convertOldStyleSpeedToTables(uint_least32_t speed, SidTuneInfo::clock_t clock)
@@ -582,22 +574,28 @@ std::string SidTuneBase::petsciiToAscii(SmartPtr_sidtt<const uint8_t>& spPet)
 {
     std::string buffer;
 
-    char c;
     do
     {
-        c = CHR_tab[*spPet];  // ASCII CHR$ conversion
-        if ((c >= 0x20) && (buffer.length() <= 31))
-            buffer.push_back(c);  // copy to info string
+        const uint8_t petsciiChar = *spPet;
+        spPet++;
+
+        if ((petsciiChar == 0x00) || (petsciiChar == 0x0d))
+            break;
 
         // If character is 0x9d (left arrow key) then move back.
-        if ((*spPet == 0x9d) && (!buffer.empty()))
+        if ((petsciiChar == 0x9d) && (!buffer.empty()))
         {
             buffer.resize(buffer.size() - 1);
         }
-
-        spPet++;
+        else
+        {
+            // ASCII CHR$ conversion
+            const char asciiChar = CHR_tab[petsciiChar];
+            if ((asciiChar >= 0x20) && (buffer.length() <= 31))
+                buffer.push_back(asciiChar);
+        }
     }
-    while (!((c == 0x0D) || (c == 0x00) || spPet.fail()));
+    while (!spPet.fail());
 
     return buffer;
 }

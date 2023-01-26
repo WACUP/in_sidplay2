@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.4"
+#define PLUGIN_VERSION L"2.4.2"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -66,7 +66,7 @@ void about(HWND hwndParent)
 	wchar_t message[1024] = { 0 }, title[256] = { 0 };
 	StringCchPrintf(message, ARRAYSIZE(message), WASABI_API_LNGSTRINGW(IDS_ABOUT_STRING),
 					WASABI_API_LNGSTRINGW_BUF(IDS_PLUGIN_NAME, title, ARRAYSIZE(title)),
-					PLUGIN_VERSION, TEXT(__DATE__), L"2.4.0-pre - 29 Oct 2022");
+								  PLUGIN_VERSION, TEXT(__DATE__), L"2.4.1 - 19 Nov 2022");
 	AboutMessageBox(hwndParent, message, title);
 }
 
@@ -1077,6 +1077,49 @@ extern "C" __declspec(dllexport) intptr_t winampGetExtendedRead_openW(const wcha
 	CThreadSidDecoder *sidDecoder = new CThreadSidDecoder();
 	if (sidDecoder)
 	{
+		std::string strFilename, str;
+		strFilename.assign(AutoCharFn(fn));
+
+		int i = strFilename.find('}');
+		if (i > 0)
+		{
+			//assume char '{' will never occur in name unless its our subsong sign
+			int j = strFilename.find('{');
+			str = strFilename.substr(j + 1, i - j - 1);
+			int subsongIndex = AStr2I(str.c_str());
+			strFilename = strFilename.substr(i + 1);
+			//sidDecoder->LoadTune(strFilename.c_str());
+			//sidDecoder->PlaySubtune(subsongIndex);
+		}
+		//else
+		//{
+			sidDecoder->LoadTune(strFilename.c_str());
+			const SidTuneInfo* tuneInfo = sidDecoder->GetTuneInfo();
+			if (tuneInfo == NULL)
+			{
+				delete sidDecoder;
+				return 0;
+			}
+			//sidDecoder->PlaySubtune(tuneInfo->startSong());
+		//}
+
+		if (bps)
+		{
+			*bps = 16/*dec->GetBitsperSample()*/;
+		}
+		if (nch)
+		{
+			*nch = 2/*dec->GetNumberofChannel()*/;
+		}
+		if (srate)
+		{
+			*srate = 44100/*dec->GetSampleRate()*/;
+		}
+		if (size)
+		{
+			*size = -1/*sidDecoder->GetSongLength() * (*bps / 8) * (*nch)*/;
+		}
+
 		// TODO
 		return (intptr_t)sidDecoder;
 	}

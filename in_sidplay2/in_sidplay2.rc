@@ -238,8 +238,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,4,0,0
- PRODUCTVERSION 2,4,0,0
+ FILEVERSION 2,4,2,0
+ PRODUCTVERSION 2,4,2,0
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -256,12 +256,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP"
             VALUE "FileDescription", "Input Plug-in"
-            VALUE "FileVersion", "2.4.0.0"
+            VALUE "FileVersion", "2.4.2.0"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2022"
+            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2023"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.4.0.0"
+            VALUE "ProductVersion", "2.4.2.0"
         END
     END
     BLOCK "VarFileInfo"

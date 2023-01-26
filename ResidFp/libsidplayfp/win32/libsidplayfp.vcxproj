@@ -131,9 +131,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\src\builders\residfp-builder\residfp-emu.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp\array.h" />
@@ -144,7 +141,10 @@
     <ClInclude Include="..\src\builders\residfp-builder\residfp\Filter6581.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp\Filter8580.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp\FilterModelConfig.h" />
-    <ClInclude Include="..\src\builders\residfp-builder\residfp\Integrator.h" />
+    <ClInclude Include="..\src\builders\residfp-builder\residfp\FilterModelConfig6581.h" />
+    <ClInclude Include="..\src\builders\residfp-builder\residfp\FilterModelConfig8580.h" />
+    <ClInclude Include="..\src\builders\residfp-builder\residfp\Integrator6581.h" />
+    <ClInclude Include="..\src\builders\residfp-builder\residfp\Integrator8580.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp\OpAmp.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp\Potentiometer.h" />
     <ClInclude Include="..\src\builders\residfp-builder\residfp\resample\Resampler.h" />
@@ -163,6 +163,7 @@
     <ClInclude Include="..\src\c64\Banks\ExtraSidBank.h" />
     <ClInclude Include="..\src\c64\Banks\IOBank.h" />
     <ClInclude Include="..\src\c64\Banks\NullSid.h" />
+    <ClInclude Include="..\src\c64\Banks\pla.h" />
     <ClInclude Include="..\src\c64\Banks\SidBank.h" />
     <ClInclude Include="..\src\c64\Banks\SystemRAMBank.h" />
     <ClInclude Include="..\src\c64\Banks\SystemROMBanks.h" />
@@ -174,7 +175,7 @@
     <ClInclude Include="..\src\c64\c64sid.h" />
     <ClInclude Include="..\src\c64\c64vic.h" />
     <ClInclude Include="..\src\c64\CIA\interrupt.h" />
-    <ClInclude Include="..\src\c64\CIA\mos6526.h" />
+    <ClInclude Include="..\src\c64\CIA\mos652x.h" />
     <ClInclude Include="..\src\c64\CIA\SerialPort.h" />
     <ClInclude Include="..\src\c64\CIA\timer.h" />
     <ClInclude Include="..\src\c64\CIA\tod.h" />
@@ -200,7 +201,6 @@
     <ClInclude Include="..\src\SidInfoImpl.h" />
     <ClInclude Include="..\src\sidmd5.h" />
     <ClInclude Include="..\src\sidmemory.h" />
-    <ClInclude Include="..\src\sidplayfp\pstdint.h" />
     <ClInclude Include="..\src\sidplayfp\sidbuilder.h" />
     <ClInclude Include="..\src\sidplayfp\SidConfig.h" />
     <ClInclude Include="..\src\sidplayfp\siddefs.h" />
@@ -209,6 +209,7 @@
     <ClInclude Include="..\src\sidplayfp\SidTune.h" />
     <ClInclude Include="..\src\sidplayfp\SidTuneInfo.h" />
     <ClInclude Include="..\src\sidplayfp\sidversion.h" />
+    <ClInclude Include="..\src\sidrandom.h" />
     <ClInclude Include="..\src\sidtune\MUS.h" />
     <ClInclude Include="..\src\sidtune\p00.h" />
     <ClInclude Include="..\src\sidtune\prg.h" />
@@ -216,7 +217,6 @@
     <ClInclude Include="..\src\sidtune\SidTuneBase.h" />
     <ClInclude Include="..\src\sidtune\SidTuneCfg.h" />
     <ClInclude Include="..\src\sidtune\SidTuneInfoImpl.h" />
-    <ClInclude Include="..\src\sidtune\SidTuneMod.h" />
     <ClInclude Include="..\src\sidtune\SidTuneTools.h" />
     <ClInclude Include="..\src\sidtune\SmartPtr.h" />
     <ClInclude Include="..\src\stringutils.h" />
@@ -247,7 +247,10 @@
     <ClCompile Include="..\src\builders\residfp-builder\residfp\Filter6581.cpp" />
     <ClCompile Include="..\src\builders\residfp-builder\residfp\Filter8580.cpp" />
     <ClCompile Include="..\src\builders\residfp-builder\residfp\FilterModelConfig.cpp" />
-    <ClCompile Include="..\src\builders\residfp-builder\residfp\Integrator.cpp" />
+    <ClCompile Include="..\src\builders\residfp-builder\residfp\FilterModelConfig6581.cpp" />
+    <ClCompile Include="..\src\builders\residfp-builder\residfp\FilterModelConfig8580.cpp" />
+    <ClCompile Include="..\src\builders\residfp-builder\residfp\Integrator6581.cpp" />
+    <ClCompile Include="..\src\builders\residfp-builder\residfp\Integrator8580.cpp" />
     <ClCompile Include="..\src\builders\residfp-builder\residfp\OpAmp.cpp" />
     <ClCompile Include="..\src\builders\residfp-builder\residfp\resample\SincResampler.cpp" />
     <ClCompile Include="..\src\builders\residfp-builder\residfp\SID.cpp" />
@@ -256,7 +259,9 @@
     <ClCompile Include="..\src\builders\residfp-builder\residfp\WaveformCalculator.cpp" />
     <ClCompile Include="..\src\builders\residfp-builder\residfp\WaveformGenerator.cpp" />
     <ClCompile Include="..\src\c64\c64.cpp" />
-    <ClCompile Include="..\src\c64\CIA\mos6526.cpp" />
+    <ClCompile Include="..\src\c64\CIA\interrupt.cpp" />
+    <ClCompile Include="..\src\c64\CIA\mos652x.cpp" />
+    <ClCompile Include="..\src\c64\CIA\SerialPort.cpp" />
     <ClCompile Include="..\src\c64\CIA\timer.cpp" />
     <ClCompile Include="..\src\c64\CIA\tod.cpp" />
     <ClCompile Include="..\src\c64\CPU\mos6510.cpp" />
@@ -280,7 +285,6 @@
     <ClCompile Include="..\src\sidtune\prg.cpp" />
     <ClCompile Include="..\src\sidtune\PSID.cpp" />
     <ClCompile Include="..\src\sidtune\SidTuneBase.cpp" />
-    <ClCompile Include="..\src\sidtune\SidTuneMod.cpp" />
     <ClCompile Include="..\src\sidtune\SidTuneTools.cpp" />
     <ClCompile Include="..\src\utils\iniParser.cpp" />
     <ClCompile Include="..\src\utils\ini\ini.cpp" />

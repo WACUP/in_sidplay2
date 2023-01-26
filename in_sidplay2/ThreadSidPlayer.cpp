@@ -764,7 +764,12 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 	//open song length database
 	if((m_playerConfig.useSongLengthFile) && (m_playerConfig.songLengthsFile != NULL))
 	{
-		if(!m_sidDatabase.open(m_playerConfig.songLengthsFile)) TimedMessageBox(NULL,L"Error opening songlength database.\r\nDisable songlength databse or choose other file",L"in_sidious",MB_OK,3000);
+		// TODO localise
+		if(!m_sidDatabase.open(m_playerConfig.songLengthsFile))
+			TimedMessageBox(NULL,L"Unable to open the songlength database which is needed for most files "
+							L"to correctly report their duration (e.g. for correct looping).\r\n\nGoto "
+							L"the SID preferences page where you can disable trying to use it or to "
+							L"select an appropriate file to use instead.",L"in_sidious",MB_OK,3000);
 	}
 	//open STIL file
 	if((m_playerConfig.useSTILfile) && (m_playerConfig.hvscDirectory != NULL))
@@ -889,7 +894,10 @@ void CThreadSidPlayer::FillSTILData()
 	f = fopen(buf, "rb+");
 	if (f == NULL)
 	{
-		TimedMessageBox(NULL, L"Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", L"in_sidious", MB_OK, 3000);
+		// TODO localise
+		TimedMessageBox(NULL, L"Unable to open the STIL (SID Tune Information List) file.\r\n\nGoto the SID "
+						L"preferences page where you can disable trying to use it or to select an appropriate "
+						L"HVSC (High Voltage SID Collection) folder to use instead.",L"in_sidious",MB_OK,3000);
 		return;
 	}
 	while (feof(f) == 0)
@@ -937,7 +945,10 @@ void CThreadSidPlayer::FillSTILData2()
 	f = fopen(buf, "rb+");
 	if (f == NULL)
 	{
-		TimedMessageBox(NULL, L"Error opening STIL file.\r\nDisable STIL info or choose appropriate HVSC directory", L"in_sidious", MB_OK, 3000);
+		// TODO localise
+		TimedMessageBox(NULL, L"Unable to open the STIL (SID Tune Information List) file.\r\n\nGoto the SID "
+						L"preferences page where you can disable trying to use it or to select an appropriate "
+						L"HVSC (High Voltage SID Collection) folder to use instead.",L"in_sidious",MB_OK,3000);
 		return;
 	}
 	while (feof(f) == 0)

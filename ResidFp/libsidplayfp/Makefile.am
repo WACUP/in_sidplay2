@@ -13,6 +13,12 @@ if MINGW32
   W32_LDFLAGS = -no-undefined
 endif
 
+if MACOS
+  OD = god
+else
+  OD = od
+endif
+
 if HAVE_VISIBILITY
   AM_CXXFLAGS = -fvisibility=hidden -fvisibility-inlines-hidden
 endif
@@ -26,6 +32,7 @@ AM_CPPFLAGS = -I $(top_builddir)/src/builders/residfp-builder \
 -I $(top_srcdir)/src \
 ${W32_CPPFLAGS} \
 $(EXSID_CFLAGS) \
+$(PTHREAD_CFLAGS) \
 $(FTDI_CFLAGS) \
 @debug_flags@
 
@@ -40,17 +47,19 @@ src/builders/residfp-builder/residfp/COPYING \
 src/builders/residfp-builder/residfp/README \
 src/builders/resid-builder/resid/AUTHORS \
 src/builders/resid-builder/resid/ChangeLog \
-src/builders/resid-builder/resid/COPYING \
 src/builders/resid-builder/resid/configure.in \
-src/builders/resid-builder/resid/INSTALL \
 src/builders/resid-builder/resid/Makefile.am \
 src/builders/resid-builder/resid/NEWS \
 src/builders/resid-builder/resid/README \
 src/builders/resid-builder/resid/README.VICE \
 src/builders/resid-builder/resid/THANKS \
 src/builders/resid-builder/resid/TODO \
+src/builders/resid-builder/resid/filter8580new.cc \
+src/builders/resid-builder/resid/filter8580new.h \
 $(noinst_DATA) \
-$(noinst_SCRIPTS)
+$(noinst_SCRIPTS) \
+test/testsuite.sh \
+test/testlist
 
 #=========================================================
 # Libraries
@@ -109,6 +118,7 @@ src/romCheck.h \
 src/sidemu.cpp \
 src/sidemu.h \
 src/sidendian.h \
+src/sidrandom.h \
 src/stringutils.h \
 src/c64/Banks/Bank.h \
 src/c64/c64cpu.h \
@@ -125,6 +135,7 @@ src/c64/Banks/DisconnectedBusBank.h \
 src/c64/Banks/ExtraSidBank.h \
 src/c64/Banks/IOBank.h \
 src/c64/Banks/NullSid.h \
+src/c64/Banks/pla.h \
 src/c64/Banks/SidBank.h \
 src/c64/Banks/SystemRAMBank.h \
 src/c64/Banks/SystemROMBanks.h \
@@ -139,10 +150,12 @@ src/c64/CPU/mos6510.h \
 src/c64/CPU/mos6510debug.cpp \
 src/c64/CPU/mos6510debug.h \
 src/c64/CPU/opcodes.h \
+src/c64/CIA/interrupt.cpp \
 src/c64/CIA/interrupt.h \
-src/c64/CIA/mos6526.cpp \
-src/c64/CIA/mos6526.h \
+src/c64/CIA/mos652x.cpp \
+src/c64/CIA/mos652x.h \
 src/c64/CIA/SerialPort.h \
+src/c64/CIA/SerialPort.cpp \
 src/c64/CIA/timer.cpp \
 src/c64/CIA/timer.h \
 src/c64/CIA/tod.cpp \
@@ -198,18 +211,17 @@ src/sidplayfp/sidversion.h
 src_libsidplayfp_la_LIBADD = \
 src/builders/residfp-builder/libsidplayfp-residfp.la \
 src/builders/resid-builder/libsidplayfp-resid.la \
-$(GCRYPT_LIBS)
+$(LIBGCRYPT_LIBS)
+
+src_libsidplayfp_la_CPPFLAGS = $(LIBGCRYPT_CFLAGS) $(AM_CPPFLAGS)
 
 if HARDSID
   src_libsidplayfp_la_LIBADD += src/builders/hardsid-builder/libsidplayfp-hardsid.la
 endif
 
 if EXSID_SUPPORT
-  src_libsidplayfp_la_LIBADD += src/builders/exsid-builder/libsidplayfp-exsid.la \
-  $(EXSID_LIBS)
+  src_libsidplayfp_la_LIBADD += src/builders/exsid-builder/libsidplayfp-exsid.la
 endif
-
-src_libsidplayfp_la_CPPFLAGS = $(GCRYPT_CFLAGS) $(AM_CPPFLAGS)
 
 #=========================================================
 # residfp
@@ -218,20 +230,26 @@ src_builders_residfp_builder_residfp_libresidfp_la_SOURCES = \
 src/builders/residfp-builder/residfp/array.h \
 src/builders/residfp-builder/residfp/Dac.cpp \
 src/builders/residfp-builder/residfp/Dac.h \
-src/builders/residfp-builder/residfp/Integrator.cpp \
-src/builders/residfp-builder/residfp/Integrator.h \
 src/builders/residfp-builder/residfp/EnvelopeGenerator.cpp \
 src/builders/residfp-builder/residfp/EnvelopeGenerator.h \
 src/builders/residfp-builder/residfp/ExternalFilter.cpp \
 src/builders/residfp-builder/residfp/ExternalFilter.h \
-src/builders/residfp-builder/residfp/FilterModelConfig.cpp \
-src/builders/residfp-builder/residfp/FilterModelConfig.h \
 src/builders/residfp-builder/residfp/Filter.cpp \
 src/builders/residfp-builder/residfp/Filter.h \
-src/builders/residfp-builder/residfp/Filter8580.cpp \
-src/builders/residfp-builder/residfp/Filter8580.h \
 src/builders/residfp-builder/residfp/Filter6581.cpp \
 src/builders/residfp-builder/residfp/Filter6581.h \
+src/builders/residfp-builder/residfp/Filter8580.cpp \
+src/builders/residfp-builder/residfp/Filter8580.h \
+src/builders/residfp-builder/residfp/FilterModelConfig.cpp \
+src/builders/residfp-builder/residfp/FilterModelConfig.h \
+src/builders/residfp-builder/residfp/FilterModelConfig6581.cpp \
+src/builders/residfp-builder/residfp/FilterModelConfig6581.h \
+src/builders/residfp-builder/residfp/FilterModelConfig8580.cpp \
+src/builders/residfp-builder/residfp/FilterModelConfig8580.h \
+src/builders/residfp-builder/residfp/Integrator6581.cpp \
+src/builders/residfp-builder/residfp/Integrator6581.h \
+src/builders/residfp-builder/residfp/Integrator8580.cpp \
+src/builders/residfp-builder/residfp/Integrator8580.h \
 src/builders/residfp-builder/residfp/OpAmp.cpp \
 src/builders/residfp-builder/residfp/OpAmp.h \
 src/builders/residfp-builder/residfp/Potentiometer.h \
@@ -254,13 +272,26 @@ src/builders/residfp-builder/residfp/version.cc
 #=========================================================
 # resid
 
+src_builders_resid_builder_resid_libresid_la_CPPFLAGS = \
+$(AM_CPPFLAGS) \
+-DVERSION=\"1.0-pre2\"
+
+if NEW_8580_FILTER
+FILTER8580SRC = \
+src/builders/resid-builder/resid/filter8580new.h \
+src/builders/resid-builder/resid/filter8580new.cc
+else
+FILTER8580SRC = \
+src/builders/resid-builder/resid/filter.h \
+src/builders/resid-builder/resid/filter.cc
+endif
+
 src_builders_resid_builder_resid_libresid_la_SOURCES = \
 src/builders/resid-builder/resid/dac.h \
 src/builders/resid-builder/resid/sid.h \
 src/builders/resid-builder/resid/voice.h \
 src/builders/resid-builder/resid/wave.h \
 src/builders/resid-builder/resid/envelope.h \
-src/builders/resid-builder/resid/filter.h \
 src/builders/resid-builder/resid/extfilt.h \
 src/builders/resid-builder/resid/pot.h \
 src/builders/resid-builder/resid/spline.h \
@@ -269,11 +300,11 @@ src/builders/resid-builder/resid/sid.cc \
 src/builders/resid-builder/resid/voice.cc \
 src/builders/resid-builder/resid/wave.cc \
 src/builders/resid-builder/resid/envelope.cc \
-src/builders/resid-builder/resid/filter.cc \
 src/builders/resid-builder/resid/extfilt.cc \
 src/builders/resid-builder/resid/pot.cc \
 src/builders/resid-builder/resid/resid-config.h \
 src/builders/resid-builder/resid/version.cc \
+$(FILTER8580SRC) \
 $(noinst_DATA:.dat=.h)
 
 noinst_DATA = \
@@ -356,6 +387,10 @@ src/builders/exsid-builder/exsid-builder.cpp  \
 src/builders/exsid-builder/exsid-emu.cpp \
 src/builders/exsid-builder/exsid-emu.h \
 $(exsid_src)
+
+src_builders_exsid_builder_libsidplayfp_exsid_la_LIBADD = \
+    $(EXSID_LIBS) \
+    $(PTHREAD_LIBS)
 endif
 
 #=========================================================
@@ -384,8 +419,15 @@ endif
 #=========================================================
 # test
 if TESTSUITE
+
+if MINGW32
+DEMO_SRC =
+else
+DEMO_SRC = test/demo
+endif
+
 noinst_PROGRAMS = \
-test/demo \
+$(DEMO_SRC) \
 test/test \
 src/builders/residfp-builder/residfp/resample/test
 
@@ -423,5 +465,5 @@ MAINTAINERCLEANFILES = $(BUILT_SOURCES)
 .a65.bin:
 	o65file=`echo $@ | sed 's/bin/o65/'`;\
 	xa -R -G $< -o $$o65file &&\
-	od -v -An -w8 -tx1 $$o65file | sed -re 's/[[:alnum:]]+/0x&,/g' > $@ &&\
+	${OD} -v -An -w8 -tx1 $$o65file | sed -re 's/[[:alnum:]]+/0x&,/g' > $@ &&\
 	${RM} $$o65file

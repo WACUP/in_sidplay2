@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2016 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2019 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2000-2001 Simon White
  *
@@ -30,9 +30,9 @@ SidConfig::SidConfig() :
     defaultC64Model(PAL),
     forceC64Model(false),
     defaultSidModel(MOS6581),
-	secondSidModel(MOS6581),
     forceSidModel(false),
-	forceSecondSidModel(false),
+    digiBoost(false),
+    ciaModel(MOS6526),
     playback(MONO),
     frequency(DEFAULT_SAMPLING_FREQ),
     secondSidAddress(0),
@@ -51,6 +51,8 @@ bool SidConfig::compare(const SidConfig &config)
         || forceC64Model != config.forceC64Model
         || defaultSidModel != config.defaultSidModel
         || forceSidModel != config.forceSidModel
+        || digiBoost != config.digiBoost
+        || ciaModel != config.ciaModel
         || playback != config.playback
         || frequency != config.frequency
         || secondSidAddress != config.secondSidAddress
@@ -58,6 +60,7 @@ bool SidConfig::compare(const SidConfig &config)
         || sidEmulation != config.sidEmulation
         || leftVolume != config.leftVolume
         || rightVolume != config.rightVolume
+        || powerOnDelay != config.powerOnDelay
         || samplingMethod != config.samplingMethod
         || fastSampling != config.fastSampling;
 }

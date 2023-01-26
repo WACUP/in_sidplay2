@@ -191,8 +191,8 @@ DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 			//do we need to seek ??
 			if(playerObj->m_seekNeedMs > 0) 
 				playerObj->DoSeek();
-			else
-				Sleep(20);
+			/*else
+				Sleep(20);*/
 		}
 
 		//int timeElapsed = playerObj->GetPlayTime();

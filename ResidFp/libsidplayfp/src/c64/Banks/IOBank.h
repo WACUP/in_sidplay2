@@ -22,13 +22,7 @@
 #ifndef IOBANK_H
 #define IOBANK_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
 
 #include "Bank.h"
 
@@ -41,8 +35,6 @@ namespace libsidplayfp
  * IO region handler. 4k region, 16 chips, 256b banks.
  *
  * Located at $D000-$DFFF
- *
- * @author Antti Lankila
  */
 class IOBank final : public Bank
 {

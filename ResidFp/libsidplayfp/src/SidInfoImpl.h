@@ -23,14 +23,7 @@
 #ifndef SIDINFOIMPL_H
 #define SIDINFOIMPL_H
 
-#ifdef _MSC_VER
-#if (_MSC_VER >= 1600)
 #include <stdint.h>
-#else
-#include "pstdint.h"
-#endif /* (_MSC_VER >= 1600) */
-#endif
-
 #include <vector>
 #include <string>
 
@@ -80,6 +73,8 @@ public:
     uint_least16_t m_driverAddr;
     uint_least16_t m_driverLength;
 
+    uint_least16_t m_powerOnDelay;
+
 private:
     // prevent copying
     SidInfoImpl(const SidInfoImpl&);
@@ -92,7 +87,8 @@ public:
         m_maxsids(libsidplayfp::Mixer::MAX_SIDS),
         m_channels(1),
         m_driverAddr(0),
-        m_driverLength(0)
+        m_driverLength(0),
+        m_powerOnDelay(0)
     {
         m_credits.push_back(PACKAGE_NAME " V" PACKAGE_VERSION " Engine:\n"
             "\tCopyright (C) 2000 Simon White\n"
@@ -104,7 +100,8 @@ public:
     const char *getName() const override { return m_name.c_str(); }
     const char *getVersion() const override { return m_version.c_str(); }
 
-    unsigned int getNumberOfCredits() const override { return m_credits.size(); }
+    // dro change
+    unsigned int getNumberOfCredits() const override { return (unsigned int)m_credits.size(); }
     const char *getCredits(unsigned int i) const override { return i<m_credits.size()?m_credits[i].c_str():""; }
 
     unsigned int getMaxsids() const override { return m_maxsids; }
@@ -113,6 +110,8 @@ public:
 
     uint_least16_t getDriverAddr() const override { return m_driverAddr; }
     uint_least16_t getDriverLength() const override { return m_driverLength; }
+
+    uint_least16_t getPowerOnDelay() const override { return m_powerOnDelay; }
 
     const char *getSpeedString() const override { return m_speedString.c_str(); }
 

@@ -329,7 +329,7 @@ struct mixer_offset
 {
   enum { value = mixer_offset<i - 1>::value + ((i - 1) << 16) };
 };
-	      
+
 template<>
 struct mixer_offset<1>
 {
@@ -422,6 +422,11 @@ protected:
 
   chip_model sid_model;
 
+   typedef struct {
+    unsigned short vx;
+    short dvx;
+  } opamp_t;
+
   typedef struct {
     int vo_N16;  // Fixed point scaling for 16 bit op-amp output.
     int kVddt;   // K*(Vdd - Vth)
@@ -443,7 +448,7 @@ protected:
     unsigned short f0_dac[1 << 11];
   } model_filter_t;
 
-  int solve_gain(int* opamp, int n, int vi_t, int& x, model_filter_t& mf);
+  int solve_gain(opamp_t* opamp, int n, int vi_t, int& x, model_filter_t& mf);
   int solve_integrate_6581(int dt, int vi_t, int& x, int& vc, model_filter_t& mf);
 
   // VCR - 6581 only.
@@ -741,8 +746,8 @@ for my $mix (0..2**@i-1) {
     print sprintf("  case 0x%02x:\n", $mix);
     my @sum;
     for (@i) {
-	unshift(@sum, $_) if $mix & 0x01;
-	$mix >>= 1;
+        unshift(@sum, $_) if $mix & 0x01;
+        $mix >>= 1;
     }
     my $sum = join(" + ", @sum) || "0";
     print "    Vi = $sum;\n";
@@ -1324,7 +1329,7 @@ the equations for the root function and its derivative can be written as:
   df = 2*((b - (vx + x))*(dvx + 1) - a*(b - vx)*dvx)
 */
 RESID_INLINE
-int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
+int Filter::solve_gain(opamp_t* opamp, int n, int vi, int& x, model_filter_t& mf)
 {
   // Note that all variables are translated and scaled in order to fit
   // in 16 bits. It is not necessary to explicitly translate the variables here,
@@ -1345,9 +1350,8 @@ int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
     int xk = x;
 
     // Calculate f and df.
-    int vx_dvx = opamp[x];
-    int vx = vx_dvx & 0xffff;  // Scaled by m*2^16
-    int dvx = vx_dvx >> 16;    // Scaled by 2^11
+    int vx = opamp[x].vx;      // Scaled by m*2^16
+    int dvx = opamp[x].dvx;    // Scaled by 2^11
 
     // f = a*(b - vx)^2 - c - (b - vo)^2
     // df = 2*((b - vo)*(dvx + 1) - a*(b - vx)*dvx)
@@ -1366,11 +1370,14 @@ int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
     // The dividend is scaled by m^2*2^27.
     int f = a*int(unsigned(b_vx)*unsigned(b_vx) >> 12) - c - int(unsigned(b_vo)*unsigned(b_vo) >> 5);
     // The divisor is scaled by m*2^11.
-    int df = (b_vo*(dvx + (1 << 11)) - a*(b_vx*dvx >> 7)) >> 15;
+    int df = ((b_vo*(dvx + (1 << 11)) >> 1) - (a*(b_vx*dvx >> 8))) >> 14;
     // The resulting quotient is thus scaled by m*2^16.
 
     // Newton-Raphson step: xk1 = xk - f(xk)/f'(xk)
-    x -= f/df;
+    // If f(xk) or f'(xk) are zero then we can't improve further.
+    if (df) {
+        x -= f/df;
+    }
     if (unlikely(x == xk)) {
       // No further root improvement possible.
       return vo;
@@ -1390,8 +1397,8 @@ int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
       // Bisection step (ala Dekker's method).
       x = (ak + bk) >> 1;
       if (unlikely(x == ak)) {
-	// No further bisection possible.
-	return vo;
+        // No further bisection possible.
+        return vo;
       }
     }
   }
@@ -1518,8 +1525,7 @@ Vg = Vddt - sqrt(((Vddt - vi)^2 + (Vddt - Vw)^2)/2)
 
 */
 RESID_INLINE
-int Filter::solve_integrate_6581(int dt, int vi, int& vx, int& vc,
-				 model_filter_t& mf)
+int Filter::solve_integrate_6581(int dt, int vi, int& vx, int& vc, model_filter_t& mf)
 {
   // Note that all variables are translated and scaled in order to fit
   // in 16 bits. It is not necessary to explicitly translate the variables here,
@@ -1547,7 +1553,7 @@ int Filter::solve_integrate_6581(int dt, int vi, int& vx, int& vc,
   if (Vgd < 0) Vgd = 0;
 
   // VCR current, scaled by m*2^15*2^15 = m*2^30
-  int n_I_vcr = (vcr_n_Ids_term[Vgs] - vcr_n_Ids_term[Vgd]) << 15;
+  int n_I_vcr = int(unsigned(vcr_n_Ids_term[Vgs] - vcr_n_Ids_term[Vgd]) << 15);
 
   // Change in capacitor charge.
   vc -= (n_I_snake + n_I_vcr)*dt;

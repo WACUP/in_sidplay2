@@ -1,52 +1,110 @@
-/***************************************************************************
-                          SidDatabase.h  -  songlength database support
-                             -------------------
-    begin                : Sun Mar 11 2001
-    copyright            : (C) 2001 by Simon White
-    email                : s_a_white@email.com
- ***************************************************************************/
+/*
+ * This file is part of libsidplayfp, a SID player engine.
+ *
+ * Copyright 2011-2020 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2007-2010 Antti Lankila
+ * Copyright 2000-2001 Simon White
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
 
-/***************************************************************************
- *                                                                         *
- *   This program is free software; you can redistribute it and/or modify  *
- *   it under the terms of the GNU General Public License as published by  *
- *   the Free Software Foundation; either version 2 of the License, or     *
- *   (at your option) any later version.                                   *
- *                                                                         *
- ***************************************************************************/
+#ifndef SIDDATABASE_H
+#define SIDDATABASE_H
 
-#ifndef _siddatabase_h_
-#define _siddatabase_h_
+#include <stdint.h>
 
-#include "sidplayfp/sidplayfp.h"
-#include "sidplayfp/SidTune.h"
-#include "sidplayfp/SidTuneInfo.h"
-#include "libini.h"
+#include "sidplayfp/siddefs.h"
 
+class SidTune;
+
+namespace libsidplayfp
+{
+class iniParser;
+}
+
+/**
+ * SidDatabase
+ * An utility class to deal with the songlength DataBase.
+ */
 class SID_EXTERN SidDatabase
 {
 private:
-    static const char *ERR_DATABASE_CORRUPT;
-    static const char *ERR_NO_DATABASE_LOADED;
-    static const char *ERR_NO_SELECTED_SONG;
-    static const char *ERR_MEM_ALLOC;
-    static const char *ERR_UNABLE_TO_LOAD_DATABASE;
+    libsidplayfp::iniParser* m_parser;
 
-    ini_fd_t    database;
     const char *errorString;
 
-    int_least32_t parseTimeStamp (const char* arg);
-    uint_least8_t timesFound     (char *str);
-
 public:
-    SidDatabase  () : database (0) {;}
-    ~SidDatabase ();
+    SidDatabase();
+    ~SidDatabase();
 
-    int           open   (const char *filename);
-    void          close  ();
-    int_least32_t length (SidTune &tune);
-    int_least32_t length (const char *md5, uint_least16_t song);
-    const char *  error  (void) { return errorString; }
+    /**
+     * Open the songlength DataBase.
+     *
+     * @param filename songlengthDB file name with full path.
+     * @return false in case of errors, true otherwise.
+     */
+    bool open(const char *filename);
+#ifdef _WIN32
+    bool open(const wchar_t* filename);
+#endif
+
+    /**
+     * Close the songlength DataBase.
+     */
+    void close();
+
+    /**
+     * Get the length of the current subtune.
+     * The hash is obtained with a specific MD5 calculation (old format).
+     *
+     * @param tune the SID tune
+     * @return tune length in seconds, -1 in case of errors.
+     */
+    //int_least32_t length(SidTune &tune);
+
+    /**
+     * Get the length of the selected subtune.
+     *
+     * @param md5 the md5 hash of the tune.
+     * @param song the subtune.
+     * @return tune length in seconds, -1 in case of errors.
+     */
+    //int_least32_t length(const char *md5, unsigned int song);
+
+    /**
+     * Get the length of the current subtune.
+     * The hash is based on the full content (new format).
+     *
+     * @param tune the SID tune
+     * @return tune length in milliseconds, -1 in case of errors.
+     */
+    int_least32_t lengthMs(SidTune &tune);
+
+    /**
+     * Get the length of the selected subtune.
+     *
+     * @param md5 the md5 hash of the tune.
+     * @param song the subtune.
+     * @return tune length in milliseconds, -1 in case of errors.
+     */
+    int_least32_t lengthMs(const char *md5, unsigned int song);
+
+    /**
+     * Get descriptive error message.
+     */
+    const char *error() const { return errorString; }
 };
 
-#endif // _siddatabase_h_
+#endif // SIDDATABASE_H
