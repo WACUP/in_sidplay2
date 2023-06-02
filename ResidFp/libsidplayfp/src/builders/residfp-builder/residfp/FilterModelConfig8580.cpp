@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2020 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2023 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2010 Dag Lem
  *
@@ -24,6 +24,7 @@
 
 #include "Integrator8580.h"
 #include "OpAmp.h"
+
 
 namespace reSIDfp
 {
@@ -121,8 +122,8 @@ FilterModelConfig8580* FilterModelConfig8580::getInstance()
 
 FilterModelConfig8580::FilterModelConfig8580() :
     FilterModelConfig(
-        0.25,   // voice voltage range FIXME measure
-        4.80,   // voice DC voltage FIXME was 4.76
+        0.30,   // voice voltage range FIXME measure
+        4.84,   // voice DC voltage FIXME measure
         22e-9,  // capacitor value
         9.09,   // Vdd
         0.80,   // Vth
@@ -132,9 +133,29 @@ FilterModelConfig8580::FilterModelConfig8580() :
     )
 {
     // Create lookup tables for gains / summers.
+#ifndef _OPENMP
+    OpAmp opampModel(
+        std::vector<Spline::Point>(
+            std::begin(opamp_voltage),
+            std::end(opamp_voltage)),
+        Vddt,
+        vmin,
+        vmax);
+#endif
 
-    OpAmp opampModel(std::vector<Spline::Point>(std::begin(opamp_voltage), std::end(opamp_voltage)), Vddt);
-
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+#ifdef _OPENMP
+    OpAmp opampModel(
+        std::vector<Spline::Point>(
+            std::begin(opamp_voltage),
+            std::end(opamp_voltage)),
+        Vddt,
+        vmin,
+        vmax);
+#endif
     // The filter summer operates at n ~ 1, and has 5 fundamentally different
     // input configurations (2 - 6 input "resistors").
     //
@@ -156,7 +177,19 @@ FilterModelConfig8580::FilterModelConfig8580() :
             summer[i][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
     // The audio mixer operates at n ~ 8/5, and has 8 fundamentally different
     // input configurations (0 - 7 input "resistors").
     //
@@ -176,11 +209,24 @@ FilterModelConfig8580::FilterModelConfig8580() :
             mixer[i][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
     // 4 bit "resistor" ladders in the audio output gain
     // necessitate 16 gain tables.
     // From die photographs of the volume "resistor" ladders
-    // it follows that gain ~ vol/16 (assuming ideal op-amps
+            // it follows that gain ~ vol/16 (assuming ideal
+            // op-amps and ideal "resistors").
     for (int n8 = 0; n8 < 16; n8++)
     {
         const int size = 1 << 16;
@@ -194,10 +240,22 @@ FilterModelConfig8580::FilterModelConfig8580() :
             gain_vol[n8][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
     // 4 bit "resistor" ladders in the bandpass resonance gain
     // necessitate 16 gain tables.
-    // From die photographs of the bandpass and volume "resistor" ladders
+            // From die photographs of the bandpass "resistor" ladders
     // it follows that 1/Q ~ 2^((4 - res)/8) (assuming ideal
     // op-amps and ideal "resistors").
     for (int n8 = 0; n8 < 16; n8++)
@@ -210,6 +268,8 @@ FilterModelConfig8580::FilterModelConfig8580() :
         {
             const double vin = vmin + vi / N16; /* vmin .. vmax */
             gain_res[n8][vi] = getNormalizedValue(opampModel.solve(resGain[n8], vin));
+                }
+            }
         }
     }
 }

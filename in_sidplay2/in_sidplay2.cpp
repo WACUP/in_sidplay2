@@ -1,4 +1,5 @@
-#define PLUGIN_VERSION L"2.4.2"
+#define PLUGIN_VERSION L"2.5.0.4"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.5.0 - 2 Jun 2023"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -66,7 +67,7 @@ void about(HWND hwndParent)
 	wchar_t message[1024] = { 0 }, title[256] = { 0 };
 	StringCchPrintf(message, ARRAYSIZE(message), WASABI_API_LNGSTRINGW(IDS_ABOUT_STRING),
 					WASABI_API_LNGSTRINGW_BUF(IDS_PLUGIN_NAME, title, ARRAYSIZE(title)),
-								  PLUGIN_VERSION, TEXT(__DATE__), L"2.4.1 - 19 Nov 2022");
+							 PLUGIN_VERSION, TEXT(__DATE__), PLUGIN_LIBRARY_BUILD_DATE);
 	AboutMessageBox(hwndParent, message, title);
 }
 
@@ -149,7 +150,7 @@ void quit(void) {
 }*/
 
 // called when winamp wants to play a file
-int play(const in_char *fn) 
+int play(const in_char *filename) 
 { 
 	std::string strFilename, str;
 
@@ -160,7 +161,9 @@ int play(const in_char *fn)
 		return 1;
 	}
 
-	strFilename.assign(ConvertPathToA(fn, NULL, 0, CP_ACP));
+	LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
+	strFilename = fn;
+	AutoCharDupFree((void*)fn);
 
 	const size_t i = strFilename.find('}');
 	if(i > 0) 
@@ -168,7 +171,7 @@ int play(const in_char *fn)
 		//assume char '{' will never occur in name unless its our subsong sign
 		const size_t j = strFilename.find('{');
 		str = strFilename.substr(j+1,i -j -1);
-		int subsongIndex = atoi(str.c_str());
+		int subsongIndex = AStr2I(str.c_str());
 		strFilename = strFilename.substr(i+1);
 		sidPlayer->LoadTune(strFilename.c_str());
 		sidPlayer->PlaySubtune(subsongIndex);
@@ -447,14 +450,18 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	else
 	{
 		subsongIndex = 1;
-		strFilename.assign(ConvertPathToA(filename, NULL, 0, CP_ACP));
+
+		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
+		strFilename = fn;
+		AutoCharDupFree((void*)fn);
+
 		if(strFilename[0] == '{') 
 		{
 			firstSong = false;
 			//assume char '{' will never occur in name unless its our subsong sign
 			const size_t i = strFilename.find('}');
 			str = strFilename.substr(1, i -1);
-			subsongIndex = atoi(str.c_str());
+			subsongIndex = AStr2I(str.c_str());
 			strFilename = strFilename.substr(i + 1);
 			//get info from other file if we got real name
 			tune.load(strFilename.c_str());
@@ -677,7 +684,7 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 #endif
 
 // module definition.
-extern In_Module inmod = 
+extern In_Module plugin = 
 {
 	IN_VER_WACUP,	// defined in IN2.H
 	(char *)L"SID Player v" PLUGIN_VERSION,
@@ -777,7 +784,10 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 		SidTune tune(0);
 		std::string strfilename;
 
-		strfilename.assign(ConvertPathToA(filename, NULL, 0, CP_ACP));
+		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
+		strfilename = fn;
+		AutoCharDupFree((void*)fn);
+
 		const size_t i = strfilename.find('}');
 		if (i > 0) 
 		{
@@ -882,14 +892,18 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	else
 	{
 		subsongIndex = 1;
-		strFilename.assign(ConvertPathToA(filename, NULL, 0, CP_ACP));
+
+		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
+		strFilename = fn;
+		AutoCharDupFree((void*)fn);
+
 		if (strFilename[0] == '{') 
 		{
 			//firstSong = false;
 			//assume char '{' will never occur in name unless its our subsong sign
 			const size_t i = strFilename.find('}');
 			str = strFilename.substr(1,i -1);
-			subsongIndex = atoi(str.c_str());
+			subsongIndex = AStr2I(str.c_str());
 			strFilename = strFilename.substr(i+1);
 			//get info from other file if we got real name
 			tune.load(strFilename.c_str());
@@ -939,7 +953,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			length = -1000;
 		}
 
-		_itow_s(length, ret, retlen, 10);
+		I2WStr(length, ret, retlen);
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "title"))
@@ -1056,7 +1070,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	{
 		if (tuneInfo->songs() > 1)
 		{
-			_itow_s(subsongIndex, ret, retlen, 10);
+			I2WStr(subsongIndex, ret, retlen);
 		}
 		else
 		{

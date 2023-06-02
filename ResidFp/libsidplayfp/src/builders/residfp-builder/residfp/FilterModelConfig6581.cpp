@@ -1,7 +1,7 @@
 /*
  * This file is part of libsidplayfp, a SID player engine.
  *
- * Copyright 2011-2022 Leandro Nini <drfiemost@users.sourceforge.net>
+ * Copyright 2011-2023 Leandro Nini <drfiemost@users.sourceforge.net>
  * Copyright 2007-2010 Antti Lankila
  * Copyright 2010 Dag Lem
  *
@@ -121,8 +121,29 @@ FilterModelConfig6581::FilterModelConfig6581() :
 
     // Create lookup tables for gains / summers.
 
-    OpAmp opampModel(std::vector<Spline::Point>(std::begin(opamp_voltage), std::end(opamp_voltage)), Vddt);
+#ifndef _OPENMP
+    OpAmp opampModel(
+        std::vector<Spline::Point>(
+            std::begin(opamp_voltage),
+            std::end(opamp_voltage)),
+        Vddt,
+        vmin,
+        vmax);
+#endif
 
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
     // The filter summer operates at n ~ 1, and has 5 fundamentally different
     // input configurations (2 - 6 input "resistors").
     //
@@ -144,7 +165,19 @@ FilterModelConfig6581::FilterModelConfig6581() :
             summer[i][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
     // The audio mixer operates at n ~ 8/6, and has 8 fundamentally different
     // input configurations (0 - 7 input "resistors").
     //
@@ -164,10 +197,22 @@ FilterModelConfig6581::FilterModelConfig6581() :
             mixer[i][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
-    // 4 bit "resistor" ladders in the audio
-    // output gain necessitate 16 gain tables.
-    // From die photographs of the bandpass and volume "resistor" ladders
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
+            // 4 bit "resistor" ladders in the audio output gain
+            // necessitate 16 gain tables.
+            // From die photographs of the volume "resistor" ladders
     // it follows that gain ~ vol/12 (assuming ideal
     // op-amps and ideal "resistors").
     for (int n8 = 0; n8 < 16; n8++)
@@ -183,10 +228,22 @@ FilterModelConfig6581::FilterModelConfig6581() :
             gain_vol[n8][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
+        #pragma omp section
+        {
+#ifdef _OPENMP
+            OpAmp opampModel(
+                std::vector<Spline::Point>(
+                    std::begin(opamp_voltage),
+                    std::end(opamp_voltage)),
+                Vddt,
+                vmin,
+                vmax);
+#endif
     // 4 bit "resistor" ladders in the bandpass resonance gain
     // necessitate 16 gain tables.
-    // From die photographs of the bandpass and volume "resistor" ladders
+            // From die photographs of the bandpass "resistor" ladders
     // it follows that 1/Q ~ ~res/8 (assuming ideal
     // op-amps and ideal "resistors").
     for (int n8 = 0; n8 < 16; n8++)
@@ -202,7 +259,10 @@ FilterModelConfig6581::FilterModelConfig6581() :
             gain_res[n8][vi] = getNormalizedValue(opampModel.solve(n, vin));
         }
     }
+        }
 
+        #pragma omp section
+        {
     const double nVddt = N16 * (Vddt - vmin);
 
     for (unsigned int i = 0; i < (1 << 16); i++)
@@ -213,7 +273,10 @@ FilterModelConfig6581::FilterModelConfig6581() :
         assert(tmp > -0.5 && tmp < 65535.5);
         vcr_nVg[i] = static_cast<unsigned short>(tmp + 0.5);
     }
+        }
 
+        #pragma omp section
+        {
     //  EKV model:
     //
     //  Ids = Is * (if - ir)
@@ -237,6 +300,8 @@ FilterModelConfig6581::FilterModelConfig6581() :
         const double tmp = n_Is * log_term * log_term;
         assert(tmp > -0.5 && tmp < 65535.5);
         vcr_n_Ids_term[kVgt_Vx] = static_cast<unsigned short>(tmp + 0.5);
+            }
+        }
     }
 }
 

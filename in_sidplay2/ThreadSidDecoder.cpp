@@ -320,7 +320,7 @@ void CThreadSidDecoder::ReadLine(char* buf,FILE *file,const int maxBuf)
 void CThreadSidDecoder::AssignConfigValue(PlayerConfig* plconf,string token, string value)
 {
 	SidConfig* conf = &plconf->sidConfig;
-	if(token.compare("PlayFrequency") == 0) { conf->frequency = atoi(value.c_str()); return; }
+	if(token.compare("PlayFrequency") == 0) { conf->frequency = AStr2I(value.c_str()); return; }
 	if(token.compare("PlayChannels") == 0) 
 	{
 		if(value.compare("1") == 0)
@@ -335,18 +335,18 @@ void CThreadSidDecoder::AssignConfigValue(PlayerConfig* plconf,string token, str
 	}
 	if(token.compare("C64Model") == 0) 
 	{
-		conf->defaultC64Model = (SidConfig::c64_model_t)atoi(value.c_str());
+		conf->defaultC64Model = (SidConfig::c64_model_t)AStr2I(value.c_str());
 		return;
 	}
 	if (token.compare("C64ModelForced") == 0)
 	{
-		conf->forceC64Model = (bool)atoi(value.c_str());
+		conf->forceC64Model = (bool)AStr2I(value.c_str());
 		return;
 	}
 
 	if(token.compare("SidModel") == 0) 
 	{
-		conf->defaultSidModel = (SidConfig::sid_model_t)atoi(value.c_str());
+		conf->defaultSidModel = (SidConfig::sid_model_t)AStr2I(value.c_str());
 		return;
 	}
 
@@ -365,42 +365,42 @@ void CThreadSidDecoder::AssignConfigValue(PlayerConfig* plconf,string token, str
 
 	if (token.compare("Sid2Model") == 0)
 	{
-		plconf->sid2Model = (SidConfig::sid_model_t)atoi(value.c_str());
+		plconf->sid2Model = (SidConfig::sid_model_t)AStr2I(value.c_str());
 		return;
 	}
 
 	if (token.compare("PseudoStereo") == 0)
 	{
-		plconf->pseudoStereo = (bool)atoi(value.c_str());
+		plconf->pseudoStereo = (bool)AStr2I(value.c_str());
 		return;
 	}
 
 	if (token.compare("SidModelForced") == 0)
 	{
-		conf->forceSidModel = (bool)atoi(value.c_str());
+		conf->forceSidModel = (bool)AStr2I(value.c_str());
 		return;
 	}
 
-	if (token.compare("Sid2ModelForced") == 0)
+	/*if (token.compare("Sid2ModelForced") == 0)
 	{
-		conf->forceSecondSidModel = (bool)atoi(value.c_str());
+		conf->forceSecondSidModel = (bool)AStr2I(value.c_str());
 		return;
-	}
+	}*/
 
 	if(token.compare("PlayLimitEnabled") == 0) 
 	{
-		plconf->playLimitEnabled = (bool)atoi(value.c_str());
+		plconf->playLimitEnabled = (bool)AStr2I(value.c_str());
 		return;
 	}
 	if(token.compare("PlayLimitTime") == 0) 
 	{
-		plconf->playLimitSec = atoi(value.c_str());
+		plconf->playLimitSec = AStr2I(value.c_str());
 		return;
 	}
 
 	if(token.compare("UseSongLengthFile") == 0)
 	{
-		plconf->useSongLengthFile =(bool)atoi(value.c_str());
+		plconf->useSongLengthFile =(bool)AStr2I(value.c_str());
 		return;
 	}
 	if(token.compare("SongLengthsFile") == 0)
@@ -419,7 +419,7 @@ void CThreadSidDecoder::AssignConfigValue(PlayerConfig* plconf,string token, str
 	}
 	if(token.compare("UseSTILFile") == 0)
 	{
-		plconf->useSTILfile =(bool)atoi(value.c_str());
+		plconf->useSTILfile =(bool)AStr2I(value.c_str());
 		return;
 	}
 }

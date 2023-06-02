@@ -126,8 +126,8 @@
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="2"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;..\ResidFp\libsidplayfp\src\builders\residfp-builder&quot;;..\ResidFp\libsidplayfp\win32;..\ResidFp\libsidplayfp\src;..\..;..\..\sdk\Wasabi"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;IN_SIDPLAY2_EXPORTS;HAVE_MSWINDOWS;UNICODE_INPUT_PLUGIN;_WIN32_WINNT=_WIN32_WINNT_WIN7;WIN32_LEAN_AND_MEAN;_CRT_SECURE_NO_WARNINGS;STRSAFE_USE_SECURE_CRT;STRSAFE_LIB"
+				AdditionalIncludeDirectories="&quot;..\ResidFp\libsidplayfp\src\builders\residfp-builder&quot;;..\ResidFp\libsidplayfp\win32;..\ResidFp\libsidplayfp\src;..\..;..\..\sdk;..\..\sdk\Wasabi"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;IN_SIDIOUS_EXPORTS;STRSAFE_USE_SECURE_CRT;WIN32_LEAN_AND_MEAN;_WIN32_WINNT=_WIN32_WINNT_WIN7;UNICODE_INPUT_PLUGIN"
 				StringPooling="true"
 				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
@@ -137,7 +137,96 @@
 				BrowseInformation="1"
 				WarningLevel="3"
 				DebugInformationFormat="3"
-				DisableSpecificWarnings="4018;4091;4101;4996;4482;4244;4800;4251;4275"
+				DisableSpecificWarnings="6387;4018;4091;4101;4996;4482;4244;4800;4251;4275"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="shlwapi.lib"
+				LinkIncremental="1"
+				AdditionalLibraryDirectories=""
+				GenerateManifest="false"
+				ModuleDefinitionFile="in_sidplay2.def"
+				GenerateDebugInformation="true"
+				SubSystem="2"
+				OptimizeReferences="2"
+				EnableCOMDATFolding="2"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+				CommandLine="copy &quot;$(TargetDir)\in_sidious.dll&quot; &quot;C:\Program Files (x86)\WinampAlt\Plugins&quot; /y&#x0D;&#x0A;copy &quot;$(TargetDir)\in_sidious.dll&quot; &quot;..\..\installer\wacup_files\Plugins&quot; /y&#x0D;&#x0A;REM ..\sdk\lng_generator\lng_generator &quot;Release\in_sidious.dll&quot; /build en-us&#x0D;&#x0A;"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release Public|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			UseOfMFC="0"
+			CharacterSet="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="3"
+				InlineFunctionExpansion="2"
+				EnableIntrinsicFunctions="true"
+				FavorSizeOrSpeed="2"
+				OmitFramePointers="true"
+				AdditionalIncludeDirectories="&quot;..\ResidFp\libsidplayfp\src\builders\residfp-builder&quot;;..\ResidFp\libsidplayfp\win32;..\ResidFp\libsidplayfp\src;..\..;..\..\sdk;..\..\sdk\Wasabi"
+				PreprocessorDefinitions="NDEBUG;WIN32;_WINDOWS;_USRDLL;IN_SIDIOUS_EXPORTS;STRSAFE_USE_SECURE_CRT;WIN32_LEAN_AND_MEAN;STRSAFE_LIB;_WIN32_WINNT=_WIN32_WINNT_WIN7;UNICODE_INPUT_PLUGIN"
+				StringPooling="true"
+				RuntimeLibrary="2"
+				BufferSecurityCheck="false"
+				EnableFunctionLevelLinking="true"
+				EnableEnhancedInstructionSet="2"
+				RuntimeTypeInfo="false"
+				BrowseInformation="1"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+				DisableSpecificWarnings="6387;4018;4091;4101;4996;4482;4244;4800;4251;4275"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

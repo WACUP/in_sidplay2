@@ -1,50 +1,47 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="resid-fp-builder">
-      <UniqueIdentifier>{8e970942-8e80-4ab4-a0ed-193dd6034861}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="resid-fp-builder\residfp">
-      <UniqueIdentifier>{c1f942a9-0de3-4aa6-b062-af28edde34ef}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="c64">
-      <UniqueIdentifier>{d9bc1c45-4cdb-4fc2-913c-b3834a0b4b3a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="c64\Banks">
-      <UniqueIdentifier>{35ce8807-1bdf-4bfb-a2e8-06ae3cb9af18}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="c64\CIA">
-      <UniqueIdentifier>{abe2aca7-5bb1-45ae-99d4-b5235f2ba6ab}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="c64\CPU">
-      <UniqueIdentifier>{af830d59-2a72-4168-beeb-20d4945aa74d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="c64\VIC_II">
-      <UniqueIdentifier>{ae5b8319-d8de-491f-ab17-5df13434d1b2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="sidplayfp">
-      <UniqueIdentifier>{a5df1212-fe13-4b2b-9b12-605ac3493b7e}</UniqueIdentifier>
+      <UniqueIdentifier>{f6422153-8565-48e4-9772-edb8e1d57cda}</UniqueIdentifier>
     </Filter>
     <Filter Include="sidtune">
-      <UniqueIdentifier>{b0a9d55a-9a83-4c41-b723-4ca570e3ce9b}</UniqueIdentifier>
+      <UniqueIdentifier>{159cafb1-d661-4156-adc4-f6bf71fea718}</UniqueIdentifier>
     </Filter>
     <Filter Include="utils">
-      <UniqueIdentifier>{44b0e60f-1d82-4872-b426-0e8aa115cd6d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="utils\MD5">
-      <UniqueIdentifier>{d8c1e05e-f981-4944-807d-40f6a5504e06}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="utils\STILview">
-      <UniqueIdentifier>{d56e79ed-6afa-4a75-854d-c46c7f604ae0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="resid-fp-builder\residfp\resample">
-      <UniqueIdentifier>{2959953d-b3ca-40f1-bb0f-10bdf63eb9af}</UniqueIdentifier>
+      <UniqueIdentifier>{a780a5a7-10e7-4e73-8e79-d8a538943ffd}</UniqueIdentifier>
     </Filter>
     <Filter Include="utils\ini">
-      <UniqueIdentifier>{fdff18f3-73c5-4d64-b09f-9fa486011f97}</UniqueIdentifier>
+      <UniqueIdentifier>{84023210-388e-4dae-a11e-81028c038216}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils\MD5">
+      <UniqueIdentifier>{ea51d5cf-a038-4aa7-b2ec-103fdd088964}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils\STILview">
+      <UniqueIdentifier>{9a7921f4-f660-42f7-ad7e-7884c5bd5ecb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="c64">
+      <UniqueIdentifier>{3af83d27-ada5-491c-ad80-f5ed4d1b11d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="c64\Banks">
+      <UniqueIdentifier>{1ed6d5e1-a947-4dbf-9792-be1c9d713615}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="c64\CIA">
+      <UniqueIdentifier>{97876b8a-f341-40a9-848d-ce0fef026889}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="c64\CPU">
+      <UniqueIdentifier>{3e5a7127-5c53-4a02-b415-08266928ee27}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="c64\VIC_II">
+      <UniqueIdentifier>{0dda3365-7988-4a72-92c0-a5848a63c8f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resid-fp-builder">
+      <UniqueIdentifier>{02b0c6c1-5fb8-4345-8c45-c2de07f884d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resid-fp-builder\residfp">
+      <UniqueIdentifier>{19060b9b-7570-4eca-883a-f9fd5ea35eb3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="resid-fp-builder\residfp\resample">
+      <UniqueIdentifier>{b0c9c8d7-6cc2-413d-93d5-2c11349ef131}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

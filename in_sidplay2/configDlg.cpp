@@ -103,7 +103,7 @@ void ConfigDlgInitDialog(HWND hWnd)
 
 	if(playerConfig->playLimitEnabled) CheckDlgButton(hWnd,IDC_PLAYLIMIT_CHK,BST_CHECKED);
 	else CheckDlgButton(hWnd,IDC_PLAYLIMIT_CHK,BST_UNCHECKED);
-	SetDlgItemTextA(hWnd,IDC_PLAYLIMITTIME,itoa(playerConfig->playLimitSec,buf,ARRAYSIZE(buf)));
+	SetDlgItemTextA(hWnd,IDC_PLAYLIMITTIME,I2AStr(playerConfig->playLimitSec,buf,ARRAYSIZE(buf)));
 
 	if(playerConfig->useSongLengthFile)
 		CheckDlgButton(hWnd,IDC_ENABLESONGLENDB,BST_CHECKED);
@@ -204,7 +204,7 @@ void UpdateConfig(HWND hWnd)
 		char buf[MAX_BUFFER_SIZE] = {0};
 		GetDlgItemTextA(hWnd,IDC_PLAYLIMITTIME,buf,20);
 		playerConfig->playLimitEnabled = true;
-		playerConfig->playLimitSec = atoi(buf);
+		playerConfig->playLimitSec = AStr2I(buf);
 	}
 	else
 	{

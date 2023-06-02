@@ -256,6 +256,9 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 			{
 				playerObj->m_playerStatus = SP_STOPPED;
 
+				playerObj->m_inmod->outMod->Write(NULL, 0);
+				playerObj->m_inmod->SAVSADeInit();
+
 				while (playerObj->m_inmod->outMod->IsPlaying())
 				{
 					SleepEx(10, TRUE);
@@ -271,6 +274,9 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 				if((playerObj->m_playerConfig.playLimitSec*1000) < timeElapsed) 
 				{
 					playerObj->m_playerStatus = SP_STOPPED;
+
+					playerObj->m_inmod->outMod->Write(NULL, 0);
+					playerObj->m_inmod->SAVSADeInit();
 
 					while (playerObj->m_inmod->outMod->IsPlaying())
 					{
@@ -503,7 +509,7 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, string value)
 {
 	SidConfig* conf = &plconf->sidConfig;
-	if(token.compare("PlayFrequency") == 0) { conf->frequency = atoi(value.c_str()); return; }
+	if(token.compare("PlayFrequency") == 0) { conf->frequency = AStr2I(value.c_str()); return; }
 	if(token.compare("PlayChannels") == 0) 
 	{
 		if(value.compare("1") == 0)
@@ -518,18 +524,18 @@ void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, stri
 	}
 	if(token.compare("C64Model") == 0) 
 	{
-		conf->defaultC64Model = (SidConfig::c64_model_t)atoi(value.c_str());
+		conf->defaultC64Model = (SidConfig::c64_model_t)AStr2I(value.c_str());
 		return;
 	}
 	if (token.compare("C64ModelForced") == 0)
 	{
-		conf->forceC64Model = (bool)atoi(value.c_str());
+		conf->forceC64Model = (bool)AStr2I(value.c_str());
 		return;
 	}
 
 	if(token.compare("SidModel") == 0) 
 	{
-		conf->defaultSidModel = (SidConfig::sid_model_t)atoi(value.c_str());
+		conf->defaultSidModel = (SidConfig::sid_model_t)AStr2I(value.c_str());
 		return;
 	}
 
@@ -548,42 +554,42 @@ void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, stri
 
 	if (token.compare("Sid2Model") == 0)
 	{
-		plconf->sid2Model = (SidConfig::sid_model_t)atoi(value.c_str());
+		plconf->sid2Model = (SidConfig::sid_model_t)AStr2I(value.c_str());
 		return;
 	}
 
 	if (token.compare("PseudoStereo") == 0)
 	{
-		plconf->pseudoStereo = (bool)atoi(value.c_str());
+		plconf->pseudoStereo = (bool)AStr2I(value.c_str());
 		return;
 	}
 
 	if (token.compare("SidModelForced") == 0)
 	{
-		conf->forceSidModel = (bool)atoi(value.c_str());
+		conf->forceSidModel = (bool)AStr2I(value.c_str());
 		return;
 	}
 
-	if (token.compare("Sid2ModelForced") == 0)
+	/*if (token.compare("Sid2ModelForced") == 0)
 	{
-		conf->forceSecondSidModel = (bool)atoi(value.c_str());
+		conf->forceSecondSidModel = (bool)AStr2I(value.c_str());
 		return;
-	}
+	}*/
 
 	if(token.compare("PlayLimitEnabled") == 0) 
 	{
-		plconf->playLimitEnabled = (bool)atoi(value.c_str());
+		plconf->playLimitEnabled = (bool)AStr2I(value.c_str());
 		return;
 	}
 	if(token.compare("PlayLimitTime") == 0) 
 	{
-		plconf->playLimitSec = atoi(value.c_str());
+		plconf->playLimitSec = AStr2I(value.c_str());
 		return;
 	}
 
 	if(token.compare("UseSongLengthFile") == 0)
 	{
-		plconf->useSongLengthFile =(bool)atoi(value.c_str());
+		plconf->useSongLengthFile =(bool)AStr2I(value.c_str());
 		return;
 	}
 	if(token.compare("SongLengthsFile") == 0)
@@ -602,7 +608,7 @@ void CThreadSidPlayer::AssignConfigValue(PlayerConfig* plconf,string token, stri
 	}
 	if(token.compare("UseSTILFile") == 0)
 	{
-		plconf->useSTILfile =(bool)atoi(value.c_str());
+		plconf->useSTILfile =(bool)AStr2I(value.c_str());
 		return;
 	}
 }
@@ -971,7 +977,7 @@ void CThreadSidPlayer::FillSTILData2()
 				//check for subsong numer
 				if (tmpStr.compare(0, 2, "(#") == 0)
 				{
-					int newSubsong = atoi(tmpStr.substr(2, tmpStr.length() - 3).c_str());
+					int newSubsong = AStr2I(tmpStr.substr(2, tmpStr.length() - 3).c_str());
 					//if subsong number is different than 1 then store current info and set subsong number to new value
 					if (newSubsong != 1)
 					{
