@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.5.0.4"
+#define PLUGIN_VERSION L"2.5.0.5"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.5.0 - 2 Jun 2023"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -579,7 +579,8 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 
 	if (title != NULL)
 	{
-		lstrcpyn(title, AutoWide(titleTemplate.c_str()), GETFILEINFO_TITLE_LENGTH);
+		AutoWide titleTemplateW(titleTemplate.c_str());
+		wcsncpy(title, titleTemplateW, GETFILEINFO_TITLE_LENGTH);
 	}
 
 	//if ((info->songs() == 1) || (firstSong == false) || !filename || !filename[0])
@@ -834,7 +835,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			return 0;
 		}
 
-		lstrcpyn(ret, L"Commodore 64 Music File", retlen);
+		wcsncpy(ret, L"Commodore 64 Music File", retlen);
 		return 1;
 	}
 
