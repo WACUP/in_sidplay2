@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.5.0.6"
+#define PLUGIN_VERSION L"2.5.0.7"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.5.0 - 2 Jun 2023"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -260,10 +260,10 @@ void setpan(int pan) { plugin.outMod->SetPan(pan); }
 // this gets called when the use hits Alt+3 to get the file info.
 // if you need more info, ask me :)
 
-int infoDlg(const in_char *fn, HWND hwnd)
+/*int infoDlg(const in_char *fn, HWND hwnd)
 {
 	return INFOBOX_UNCHANGED;
-}
+}*/
 
 /**
 	Replaces occurences of string %{...} containing tokens separated by | by checking which
@@ -699,7 +699,7 @@ extern In_Module plugin =
 	init,
 	quit,
 	getfileinfo,
-	infoDlg,
+	0/*infoDlg*/,
 	0/*isourfile*/,
 	play,
 	pause,
@@ -840,7 +840,11 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		return 1;
 	}
 
-	if (!filename || !*filename)
+	// if we don't have a valid file or it's a metadata cache
+	// reset then we can just abort processing further to not
+	// then have any unexpected issues with loading when it's
+	// not needed especially if no sid files are ever in use.
+	if (!filename || !*filename || !_stricmp(metadata, "reset"))
 	{
 		return 0;
 	}
