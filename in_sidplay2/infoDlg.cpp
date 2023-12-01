@@ -18,7 +18,6 @@ INT_PTR CALLBACK InfoDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			SidTuneInfo *tuneInfo = reinterpret_cast<SidTuneInfo*>(lParam);
 			char buf[20] = {0};
 			std::string infoStr;
-			int i;
 
 			SetDlgItemTextA(hWnd,IDC_STIL_ED,sidPlayer->GetSTILData(infoStr.c_str()));
 

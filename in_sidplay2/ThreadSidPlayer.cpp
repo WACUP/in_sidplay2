@@ -118,15 +118,9 @@ void CThreadSidPlayer::Play(void)
 		//default volume
 		m_inmod->outMod->SetVolume(-666); 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = CreateThread(NULL,0,CThreadSidPlayer::Run,this,CREATE_SUSPENDED,NULL);
-		// TODO api_config & thread priority level
-		if (m_threadHandle)
-		{
-			SetThreadPriority(m_threadHandle, (int)m_inmod->config->
-							  GetInt(playbackConfigGroupGUID,
-							  L"priority", THREAD_PRIORITY_HIGHEST));
-			ResumeThread(m_threadHandle);
-		}
+		m_threadHandle = StartThread(CThreadSidPlayer::Run, this, static_cast<int>(m_inmod->
+									 config->GetInt(playbackConfigGroupGUID, L"priority",
+														THREAD_PRIORITY_HIGHEST)), 0, NULL);
 	}
 }
 
@@ -985,7 +979,7 @@ void CThreadSidPlayer::FillSTILData2()
 						subsongsInfo[currentSubsong] = stillBlock;
 						currentSubsong = newSubsong-1;
 						//ajust vetor size to number of subsongs
-						while (subsongsInfo.size() <= newSubsong)
+						while ((int)subsongsInfo.size() <= newSubsong)
 						{
 							subsongsInfo.push_back(NULL);
 						}
@@ -1037,7 +1031,7 @@ void CThreadSidPlayer::FillSTILData2()
 
 void CThreadSidPlayer::FixPath(string& path)
 {
-	int i;
+	size_t i;
 	for(i=0; i<path.length();++i)
 	{
 		if(path[i] == '/') path[i] = '\\';
@@ -1081,7 +1075,7 @@ const StilBlock* CThreadSidPlayer::GetSTILData2(const char* filePath, int subson
 		return NULL;
 	}
 
-	if (subsong < i->second.size())
+	if (subsong < (int)i->second.size())
 	{
 		return i->second[subsong];
 	}

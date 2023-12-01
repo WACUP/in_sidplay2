@@ -91,8 +91,10 @@ void CThreadSidDecoder::Play(void)
 		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann)/1000, m_playerConfig.sidConfig.frequency /1000,numChann,1);*/
 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = CreateThread(NULL,0,CThreadSidDecoder::Run,this,0,NULL);
+
 		// TODO api_config & thread priority level
+		m_threadHandle = StartThread(CThreadSidDecoder::Run, this,
+								THREAD_PRIORITY_HIGHEST, 0, NULL);
 	}
 }
 

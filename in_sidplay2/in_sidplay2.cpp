@@ -100,6 +100,10 @@ int init(void)
 	// TODO localise
 	plugin.description = (char*)(TEXT("SID Player v") PLUGIN_VERSION);
 
+	/*WASABI_API_START_LANG_DESC(plugin.language, plugin.hDllInstance,
+							InSidiousLangGUID, IDS_PLUGIN_NAME,
+							PLUGIN_VERSION, &plugin.description);*/
+
 	preferences = (prefsDlgRecW*)GlobalAlloc(GPTR, sizeof(prefsDlgRecW));
 	if (preferences)
 	{
@@ -404,9 +408,9 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	SidTune tune(0);
 	int foundindex = -1;
 	int subsongIndex = 1;
-	int plLength;
+	/*int plLength;
 	wchar_t *plfilename;
-	wchar_t* foundChar;
+	wchar_t* foundChar;*/
 	bool firstSong = true;
 
 	createsidplayer();
@@ -737,9 +741,10 @@ void GetFileExtensions(void)
 	static bool loaded_extensions;
 	if (!loaded_extensions)
 	{
+		loaded_extensions = true;
+
 		// TODO localise
 		plugin.FileExtensions = (char*)L"SID\0Commodore 64 SID Music File (*.SID)\0";
-		loaded_extensions = true;
 	}
 }
 
@@ -752,8 +757,8 @@ extern "C" __declspec(dllexport) int winampUninstallPlugin(HINSTANCE hDllInst, H
 {
 	// TODO
 	// prompt to remove our settings with default as no (just incase)
-	/*if (MessageBox( hwndDlg, WASABI_API_LNGSTRINGW( IDS_UNINSTALL_SETTINGS_PROMPT ),
-				    pluginTitle, MB_YESNO | MB_DEFBUTTON2 ) == IDYES ) {
+	/*if (plugin.language->UninstallSettingsPrompt(reinterpret_cast<const wchar_t*>(plugin.description)))
+	{
 		SaveNativeIniString(PLUGIN_INI, CONFIG_APP_NAME, 0, 0);
 	}*/
 
