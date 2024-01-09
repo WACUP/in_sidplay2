@@ -1,5 +1,5 @@
-#define PLUGIN_VERSION L"2.5.0.7"
-#define PLUGIN_LIBRARY_BUILD_DATE L"2.5.0 - 2 Jun 2023"
+#define PLUGIN_VERSION L"2.6.0.10"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.6.0 - 1 Jan 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -722,7 +722,7 @@ extern In_Module plugin =
 
 	0,0, // dsp calls filled in by winamp
 
-	NULL,
+	IN_INIT_WACUP_EQSET_EMPTY
 
 	NULL,		// setinfo call filled in by winamp
 

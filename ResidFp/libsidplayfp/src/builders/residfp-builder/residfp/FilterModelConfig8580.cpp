@@ -25,6 +25,11 @@
 #include "Integrator8580.h"
 #include "OpAmp.h"
 
+#include "sidcxx11.h"
+
+#ifdef HAVE_CXX11
+#  include <mutex>
+#endif
 
 namespace reSIDfp
 {
@@ -110,8 +115,16 @@ const Spline::Point opamp_voltage[OPAMP_SIZE] =
 
 std::unique_ptr<FilterModelConfig8580> FilterModelConfig8580::instance(nullptr);
 
+#ifdef HAVE_CXX11
+std::mutex Instance8580_Lock;
+#endif
+
 FilterModelConfig8580* FilterModelConfig8580::getInstance()
 {
+#ifdef HAVE_CXX11
+    std::lock_guard<std::mutex> lock(Instance8580_Lock);
+#endif
+
     if (!instance.get())
     {
         instance.reset(new FilterModelConfig8580());
@@ -122,7 +135,7 @@ FilterModelConfig8580* FilterModelConfig8580::getInstance()
 
 FilterModelConfig8580::FilterModelConfig8580() :
     FilterModelConfig(
-        0.30,   // voice voltage range FIXME measure
+        0.24,   // voice voltage range FIXME measure
         4.84,   // voice DC voltage FIXME measure
         22e-9,  // capacitor value
         9.09,   // Vdd
@@ -274,9 +287,9 @@ FilterModelConfig8580::FilterModelConfig8580() :
     }
 }
 
-std::unique_ptr<Integrator8580> FilterModelConfig8580::buildIntegrator()
+Integrator8580* FilterModelConfig8580::buildIntegrator()
 {
-    return MAKE_UNIQUE(Integrator8580, this);
+    return new Integrator8580(this);
 }
 
 } // namespace reSIDfp

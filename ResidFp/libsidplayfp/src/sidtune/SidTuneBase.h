@@ -73,7 +73,7 @@ protected:
 public:  // ----------------------------------------------------------------
     virtual ~SidTuneBase() {}
 
-    typedef void (*LoaderFunc)(const char* fileName, buffer_t& bufferRef);
+    typedef bool (*LoaderFunc)(const char* fileName, buffer_t& bufferRef);
 
     /**
      * Load a sidtune from a file.
@@ -195,7 +195,7 @@ protected:
      * @param bufferRef
      * @throw loadError
      */
-    static void loadFile(const char* fileName, buffer_t& bufferRef);
+    static bool loadFile(const char* fileName, buffer_t& bufferRef);
 
     /**
      * Convert 32-bit PSID-style speed word to internal tables.

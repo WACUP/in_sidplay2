@@ -181,13 +181,14 @@ void SidTuneBase::placeSidTuneInC64mem(sidmemory& mem)
     mem.fillRam(info->m_loadAddr, &cache[fileOffset], info->m_c64dataLen);
 }
 
-void SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
+bool SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
 {
     std::ifstream inFile(fileName, std::ifstream::binary);
 
     if (!inFile.is_open())
     {
-        throw loadError(ERR_CANT_OPEN_FILE);
+        return false;/*/
+        throw loadError(ERR_CANT_OPEN_FILE);/**/
     }
 
     inFile.seekg(0, inFile.end);
@@ -195,7 +196,8 @@ void SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
 
     if (fileLen <= 0)
     {
-        throw loadError(ERR_EMPTY);
+        return false;/*/
+        throw loadError(ERR_EMPTY);/**/
     }
 
     inFile.seekg(0, inFile.beg);
@@ -220,6 +222,7 @@ void SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
     inFile.close();
 
     bufferRef.swap(fileBuf);
+    return true;
 }
 
 SidTuneBase::SidTuneBase() :
@@ -374,7 +377,10 @@ SidTuneBase* SidTuneBase::getFromFiles(LoaderFunc loader, const char* fileName, 
     if (loader == nullptr)
         loader = (LoaderFunc) loadFile;
 
-    loader(fileName, fileBuf1);
+    if (!loader(fileName, fileBuf1))
+    {
+        return nullptr;
+    }
 
     // File loaded. Now check if it is in a valid single-file-format.
     std::unique_ptr<SidTuneBase> s(PSID::load(fileBuf1));

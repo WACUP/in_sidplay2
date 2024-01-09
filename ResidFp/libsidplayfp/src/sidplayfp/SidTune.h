@@ -57,7 +57,7 @@ private:  // -------------------------------------------------------------
 
 public:  // ----------------------------------------------------------------
 
-    typedef void (*LoaderFunc)(const char* fileName, std::vector<uint8_t>& bufferRef);
+    typedef bool (*LoaderFunc)(const char* fileName, std::vector<uint8_t>& bufferRef);
 
     /**
      * Load a sidtune from a file.

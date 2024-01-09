@@ -22,10 +22,8 @@
 #ifndef WAVEFORMCALCULATOR_h
 #define WAVEFORMCALCULATOR_h
 
-#include <map>
-
 #include "array.h"
-#include "sidcxx11.h"
+
 #include "siddefs-fp.h"
 
 
@@ -33,21 +31,10 @@ namespace reSIDfp
 {
 
 /**
- * Combined waveform model parameters.
- */
-typedef struct
-{
-    float threshold;
-    float pulsestrength;
-    float distance1;
-    float distance2;
-} CombinedWaveformConfig;
-
-/**
  * Combined waveform calculator for WaveformGenerator.
  * By combining waveforms, the bits of each waveform are effectively short
- * circuited. A zero bit in one waveform will result in a zero output bit
- * (thus the infamous claim that the waveforms are AND'ed).
+ * circuited, a zero bit in one waveform will result in a zero output bit,
+ * thus the claim that the waveforms are AND'ed.
  * However, a zero bit in one waveform may also affect the neighboring bits
  * in the output.
  *
@@ -99,20 +86,10 @@ typedef struct
 class WaveformCalculator
 {
 private:
-    typedef std::map<const CombinedWaveformConfig*, matrix_t> cw_cache_t;
-
-private:
     matrix_t wftable;
-
-    cw_cache_t PULLDOWN_CACHE;
 
 private:
     WaveformCalculator();
-
-    /**
-     * Build waveform table.
-     */
-    void buildWaveTable();
 
 public:
     /**

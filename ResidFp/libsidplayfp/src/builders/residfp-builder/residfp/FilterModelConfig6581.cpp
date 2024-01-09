@@ -22,10 +22,15 @@
 
 #include "FilterModelConfig6581.h"
 
-#include <cmath>
-
 #include "Integrator6581.h"
 #include "OpAmp.h"
+
+#include "sidcxx11.h"
+
+#ifdef HAVE_CXX11
+#  include <mutex>
+#endif
+#include <cmath>
 
 namespace reSIDfp
 {
@@ -90,8 +95,16 @@ const Spline::Point opamp_voltage[OPAMP_SIZE] =
 
 std::unique_ptr<FilterModelConfig6581> FilterModelConfig6581::instance(nullptr);
 
+#ifdef HAVE_CXX11
+std::mutex Instance6581_Lock;
+#endif
+
 FilterModelConfig6581* FilterModelConfig6581::getInstance()
 {
+#ifdef HAVE_CXX11
+    std::lock_guard<std::mutex> lock(Instance6581_Lock);
+#endif
+
     if (!instance.get())
     {
         instance.reset(new FilterModelConfig6581());
@@ -293,13 +306,14 @@ FilterModelConfig6581::FilterModelConfig6581() :
 
     // kVgt_Vx = k*(Vg - Vt) - Vx
     // I.e. if k != 1.0, Vg must be scaled accordingly.
-    for (int kVgt_Vx = 0; kVgt_Vx < (1 << 16); kVgt_Vx++)
+    for (int i = 0; i < (1 << 16); i++)
     {
+        const int kVgt_Vx = i - (1 << 15);
         const double log_term = log1p(exp((kVgt_Vx / N16) / (2. * Ut)));
         // Scaled by m*2^15
         const double tmp = n_Is * log_term * log_term;
         assert(tmp > -0.5 && tmp < 65535.5);
-        vcr_n_Ids_term[kVgt_Vx] = static_cast<unsigned short>(tmp + 0.5);
+        vcr_n_Ids_term[i] = static_cast<unsigned short>(tmp + 0.5);
             }
         }
     }
@@ -320,9 +334,9 @@ unsigned short* FilterModelConfig6581::getDAC(double adjustment) const
     return f0_dac;
 }
 
-std::unique_ptr<Integrator6581> FilterModelConfig6581::buildIntegrator()
+Integrator6581* FilterModelConfig6581::buildIntegrator()
 {
-    return MAKE_UNIQUE(Integrator6581, this, WL_snake);
+    return new Integrator6581(this, WL_snake);
 }
 
 } // namespace reSIDfp
