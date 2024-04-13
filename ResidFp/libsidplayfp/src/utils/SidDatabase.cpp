@@ -67,7 +67,7 @@ SidDatabase::~SidDatabase()
 //
 const char *parseTime(const char *str, int_least32_t &result)
 {
-    char *end;
+    char *end = 0;
     const long minutes = AStr2L(str, &end, 10);
 
     if (!end || (*end != ':'))

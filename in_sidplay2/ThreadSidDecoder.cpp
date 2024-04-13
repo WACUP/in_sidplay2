@@ -232,7 +232,7 @@ DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 
 int CThreadSidDecoder::CurrentSubtune(void)
 {
-	if(m_tune.getStatus()) 
+	if(m_tune.getStatus())
 	{
 		const SidTuneInfo* tuneInfo = m_tune.getInfo();
 		return (tuneInfo ? tuneInfo->currentSong() : 0);

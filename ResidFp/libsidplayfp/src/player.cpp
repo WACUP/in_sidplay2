@@ -213,7 +213,7 @@ uint_least32_t Player::play(short *buffer, uint_least32_t count)
     {
         try
         {
-        m_mixer.begin(buffer, count);
+            m_mixer.begin(buffer, count);
 
             if (m_mixer.getSid(0) != nullptr)
             {
@@ -323,34 +323,41 @@ bool Player::config(const SidConfig &cfg, bool force)
         {
             sidRelease();
 
-            std::vector<unsigned int> addresses;
-            const uint_least16_t secondSidAddress = tuneInfo->sidChipBase(1) != 0 ?
-                tuneInfo->sidChipBase(1) :
-                cfg.secondSidAddress;
-            if (secondSidAddress != 0)
-                addresses.push_back(secondSidAddress);
+            if (tuneInfo != nullptr)
+            {
+                std::vector<unsigned int> addresses;
+                const uint_least16_t secondSidAddress = tuneInfo->sidChipBase(1) != 0 ?
+                    tuneInfo->sidChipBase(1) :
+                    cfg.secondSidAddress;
+                if (secondSidAddress != 0)
+                    addresses.push_back(secondSidAddress);
 
-            const uint_least16_t thirdSidAddress = tuneInfo->sidChipBase(2) != 0 ?
-                tuneInfo->sidChipBase(2) :
-                cfg.thirdSidAddress;
-            if (thirdSidAddress != 0)
-                addresses.push_back(thirdSidAddress);
+                const uint_least16_t thirdSidAddress = tuneInfo->sidChipBase(2) != 0 ?
+                    tuneInfo->sidChipBase(2) :
+                    cfg.thirdSidAddress;
+                if (thirdSidAddress != 0)
+                    addresses.push_back(thirdSidAddress);
 
-            // SID emulation setup (must be performed before the
-            // environment setup call)
-            sidCreate(cfg.sidEmulation, cfg.defaultSidModel, cfg.digiBoost, cfg.forceSidModel, addresses);
+                // SID emulation setup (must be performed before the
+                // environment setup call)
+                sidCreate(cfg.sidEmulation, cfg.defaultSidModel, cfg.digiBoost, cfg.forceSidModel, addresses);
 
-            // Determine c64 model
-            const c64::model_t model = c64model(cfg.defaultC64Model, cfg.forceC64Model);
-            m_c64.setModel(model);
+                // Determine c64 model
+                const c64::model_t model = c64model(cfg.defaultC64Model, cfg.forceC64Model);
+                m_c64.setModel(model);
 
-            const c64::cia_model_t ciaModel = getCiaModel(cfg.ciaModel);
-            m_c64.setCiaModel(ciaModel);
+                const c64::cia_model_t ciaModel = getCiaModel(cfg.ciaModel);
+                m_c64.setCiaModel(ciaModel);
 
-            sidParams(m_c64.getMainCpuSpeed(), cfg.frequency, cfg.samplingMethod, cfg.fastSampling);
+                sidParams(m_c64.getMainCpuSpeed(), cfg.frequency, cfg.samplingMethod, cfg.fastSampling);
 
-            // Configure, setup and install C64 environment/events
-            initialise();
+                // Configure, setup and install C64 environment/events
+                initialise();
+            }
+            else
+            {
+                return false;
+            }
         }
         catch (configError const &e)
         {

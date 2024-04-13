@@ -39,16 +39,16 @@ namespace reSIDfp
  * in the output.
  *
  * Example:
- * 
+ *
  *                 1 1
  *     Bit #       1 0 9 8 7 6 5 4 3 2 1 0
  *                 -----------------------
  *     Sawtooth    0 0 0 1 1 1 1 1 1 0 0 0
- *     
+ *
  *     Triangle    0 0 1 1 1 1 1 1 0 0 0 0
- *     
+ *
  *     AND         0 0 0 1 1 1 1 1 0 0 0 0
- *     
+ *
  *     Output      0 0 0 0 1 1 1 0 0 0 0 0
  *
  *
@@ -108,9 +108,10 @@ public:
      * Build pulldown table for use by WaveformGenerator.
      *
      * @param model Chip model to use
+     * @param cws strength of combined waveforms
      * @return Pulldown table
      */
-    matrix_t* buildPulldownTable(ChipModel model);
+    matrix_t* buildPulldownTable(ChipModel model, CombinedWaveforms cws);
 };
 
 } // namespace reSIDfp

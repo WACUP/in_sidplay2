@@ -139,10 +139,10 @@ public:
      */
     void clock()
     {
-            Event& event = *firstEvent;
-            firstEvent = firstEvent->next;
-            currentTime = event.triggerTime;
-            event.event();
+        Event &event = *firstEvent;
+        firstEvent = firstEvent->next;
+        currentTime = event.triggerTime;
+        event.event();
     }
 
     /**

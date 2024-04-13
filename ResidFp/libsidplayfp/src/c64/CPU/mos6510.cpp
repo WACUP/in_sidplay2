@@ -766,7 +766,7 @@ void MOS6510::sh_instr()
      * the highbyte of the target address is ANDed with the value stored.
      */
     if (adl_carry)
-{
+    {
         endian_16hi8(Cycle_EffectiveAddress, tmp & Cycle_Data);
     }
     else

@@ -60,7 +60,7 @@ namespace reSID
 // Tommi Lempinen has done an impressive work on re-vectorizing and annotating
 // the die photographs, substantially simplifying further analysis of the
 // filter circuit.
-// 
+//
 // The filter schematics below are reverse engineered from these re-vectorized
 // and annotated die photographs. While the filter first depicted in reSID 0.9
 // is a correct model of the basic filter, the schematics are now completed
@@ -72,7 +72,7 @@ namespace reSID
 //
 // SID 6581 filter / mixer / output
 // --------------------------------
-// 
+//
 //                ---------------------------------------------------
 //               |                                                   |
 //               |                         --1R1-- \--  D7           |
@@ -84,7 +84,7 @@ namespace reSID
 //               |   |                     --8R1-- \--| D4           | (7.0R1)
 //               |   |                                |              |
 // $17           |   |                    (CAP2B)     |  (CAP1B)     |
-// 0=to mixer    |    --R8--    ---R8--        ---C---|       ---C---| 
+// 0=to mixer    |    --R8--    ---R8--        ---C---|       ---C---|
 // 1=to filter   |          |  |       |      |       |      |       |
 //                ------R8--|-----[A>--|--Rw-----[A>--|--Rw-----[A>--|
 //     ve (EXT IN)          |          |              |              |
@@ -147,8 +147,8 @@ namespace reSID
 // of 12V, the NMOS FET will enter saturation mode (a.k.a. active mode), and
 // the NMOS FET will not operate anywhere like a resistor.
 //
-// 
-// 
+//
+//
 // NMOS FET voltage controlled resistor (VCR)
 // ------------------------------------------
 //
@@ -171,7 +171,7 @@ namespace reSID
 // vo  - output
 // Rn  - "resistors", implemented with custom NMOS FETs
 // Vw  - voltage from 11-bit DAC (frequency cutoff control)
-// 
+//
 // Notes:
 //
 // An approximate value for R24 can be found by using the formula for the
@@ -198,9 +198,9 @@ namespace reSID
 // Note that these are only approximate values for one particular SID chip,
 // due to process variations the values can be substantially different in
 // other chips.
-// 
-// 
-// 
+//
+//
+//
 // Filter frequency cutoff DAC
 // ---------------------------
 //
@@ -221,12 +221,12 @@ namespace reSID
 // which varies with the input signals to the VCRs. This can be seen from the
 // VCR figure above.
 //
-// 
-// 
+//
+//
 // "Op-amp" (self-biased NMOS inverter)
 // ------------------------------------
-//                  
-//                  
+//
+//
 //                        12V
 //
 //                         |
@@ -310,7 +310,7 @@ namespace reSID
 //
 // SID 8580 filter / mixer / output
 // --------------------------------
-// 
+//
 //               +---------------------------------------------------+
 //               |    $17      +----Rf-+                             |
 //               |             |       |                             |
@@ -1478,7 +1478,7 @@ Our root function f can thus be written as:
 We are using the mapping function x = vo - vx -> vx. We thus substitute
 for vo = vx + x and get:
 
-  f = (n + 1)*(Vddt - vx)^2 - n*(Vddt - vi)^2 - (Vddt - (vx + x))^2 = 0
+  f(vx) = (n + 1)*(Vddt - vx)^2 - n*(Vddt - vi)^2 - (Vddt - (vx + x))^2 = 0
 
 Using substitution constants
 
@@ -1486,10 +1486,24 @@ Using substitution constants
   b = Vddt
   c = n*(Vddt - vi)^2
 
-the equations for the root function and its derivative can be written as:
+the equations for the root function can be written and expanded as:
 
-  f = a*(b - vx)^2 - c - (b - (vx + x))^2
-  df = 2*((b - (vx + x))*(dvx + 1) - a*(b - vx)*dvx)
+  f(vx) = a*(b - vx)^2 - c - (b - (vx + x))^2
+        = a*(b^2 + vx^2 - 2*b*vx) - c - (b^2 + (vx + x)^2 - 2*b*(vx + x))
+        = a*b^2 + a*vx^2 - 2*a*b*vx - c - b^2 - (vx + x)^2 + 2*b*(vx + x)
+        = a*b^2 + a*vx^2 - 2*a*b*vx - c - b^2 - vx^2 - x^2 - 2*x*vx + 2*b*vx + 2*b*x
+
+Then we calculate the derivative:
+
+  f'(vx) = 2*a*vx - 2*a*b  - 2*vx - 2*x + 2*b
+         = 2*(a*vx - a*b - vx - x + b)
+         = 2*(a*(vx - b) + b - (vx + x))
+         = 2*(b - (vx + x) - a*(b - vx))
+         = 2*(b - vo - a*(b - vx))
+
+Given f'(x) = df/dx, we have the resulting
+
+  df = 2*((b - (vx + x)) - a*(b - vx))*dvx
 */
 #if 0
 RESID_INLINE
@@ -1593,7 +1607,7 @@ int Filter::solve_gain_d(opamp_t* opamp, double n, int vi, int& x, model_filter_
     int dvx = opamp[x].dvx;    // Scaled by m*2^11
 
     // f = a*(b - vx)^2 - c - (b - vo)^2
-    // df = 2*((b - vo)*dvx - a*(b - vx)*dvx)
+    // df = 2*((b - vo) - a*(b - vx))*dvx
     //
     int vo = vx + (x << 1) - (1 << 16);
     if (vo > (1 << 16) - 1) {
@@ -1678,7 +1692,7 @@ both subthreshold, triode, and saturation modes.
 The Shichman-Hodges transistor model routinely used in textbooks may
 be written as follows:
 
-  Ids = 0                          , Vgst < 0               (subthreshold mode) 
+  Ids = 0                          , Vgst < 0               (subthreshold mode)
   Ids = K/2*W/L*(2*Vgst - Vds)*Vds , Vgst >= 0, Vds < Vgst  (triode mode)
   Ids = K/2*W/L*Vgst^2             , Vgst >= 0, Vds >= Vgst (saturation mode)
 
@@ -1707,7 +1721,7 @@ currents without any change of parameters (since the terms for drain
 and source are identical except for the sign).
 
 FIXME: Subthreshold as function of Vgs, Vgd.
-  Ids = I0*e^(Vgst/(n*VT))       , Vgst < 0               (subthreshold mode) 
+  Ids = I0*e^(Vgst/(n*VT))       , Vgst < 0               (subthreshold mode)
 
 The remaining problem with the textbook model is that the transition
 from subthreshold the triode/saturation is not continuous.
@@ -1737,10 +1751,10 @@ Rw in the circuit diagram above is a VCR (voltage controlled resistor),
 as shown in the circuit diagram below.
 
                    Vw
-                   
+
                    |
            Vdd     |
-              |---|  
+              |---|
              _|_   |
            --    --| Vg
           |      __|__
@@ -1785,10 +1799,8 @@ int Filter::solve_integrate_6581(int dt, int vi, int& vx, int& vc, model_filter_
   int kVg = vcr_kVg[(Vddt_Vw_2 + (Vgdt_2 >> 1)) >> 16];
 
   // VCR voltages for EKV model table lookup.
-  int Vgs = kVg - vx;
-  if (Vgs < 0) Vgs = 0;
-  int Vgd = kVg - vi;
-  if (Vgd < 0) Vgd = 0;
+  int Vgs = kVg - vx + (1 << 15);
+  int Vgd = kVg - vi + (1 << 15);
 
   // VCR current, scaled by m*2^15*2^15 = m*2^30
   int n_I_vcr = int(unsigned(vcr_n_Ids_term[Vgs] - vcr_n_Ids_term[Vgd]) << 15);

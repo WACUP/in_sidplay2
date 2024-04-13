@@ -1,6 +1,6 @@
 m4_define([lib_major], [2])
 m4_define([lib_minor], [7])
-m4_define([lib_level], [0a])
+m4_define([lib_level], [0])
 m4_define([lib_version], [lib_major.lib_minor.lib_level])
 
 AC_PREREQ([2.62])
@@ -86,7 +86,7 @@ AC_CHECK_PROGS([XA], [xa])
 # od on macOS doesn't support the -w parameter
 AC_CACHE_CHECK([for od that supports -w], [ac_cv_path_OD],
   [AC_PATH_PROGS_FEATURE_CHECK([OD], [od god],
-    [[$ac_path_OD -w > /dev/null 2>&1 && ac_cv_path_OD=$ac_path_OD]])]
+    [[$ac_path_OD -w > /dev/null 2>&1 && ac_cv_path_OD=$ac_path_OD ac_path_OD_found=:]])]
 )
 AC_SUBST([OD], [$ac_cv_path_OD])
 
@@ -100,9 +100,9 @@ dnl libtool-style version-info number
 #
 # Increase the age value only if the changes made to the ABI are backward compatible.
 
-LIBSIDPLAYCUR=9
-LIBSIDPLAYREV=29
-LIBSIDPLAYAGE=3
+LIBSIDPLAYCUR=10
+LIBSIDPLAYREV=30
+LIBSIDPLAYAGE=4
 LIBSIDPLAYVERSION=$LIBSIDPLAYCUR:$LIBSIDPLAYREV:$LIBSIDPLAYAGE
 
 LIBSTILVIEWCUR=0

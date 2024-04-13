@@ -36,11 +36,11 @@ void ConfigDlgInitDialog(HWND hWnd)
 	SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_ADDSTRING,0,(LPARAM)L"11025");
 
 	//channels
-	SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_ADDSTRING,0,(LPARAM)L"Mono");
+	SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_ADDSTRING, 0, (LPARAM)L"Mono");
 
 	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
 	{
-	SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_ADDSTRING,0,(LPARAM)L"Stereo");
+		SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_ADDSTRING, 0, (LPARAM)L"Stereo");
 
 		val = (playerConfig->sidConfig.playback == SidConfig::MONO) ? val = 0 : val = 1;
 	}
@@ -168,8 +168,8 @@ void UpdateConfig(HWND hWnd)
 	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
 	{
 		//playback channels
-	val = SendDlgItemMessage(hWnd,IDC_CHANNELS,CB_GETCURSEL,0,0);
-	playerConfig->sidConfig.playback = (val==0)? SidConfig::MONO : SidConfig::STEREO;
+		val = SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_GETCURSEL, 0, 0);
+		playerConfig->sidConfig.playback = (val == 0) ? SidConfig::MONO : SidConfig::STEREO;
 	}
 
 	//C64 model
@@ -254,7 +254,7 @@ void SelectHvscFile(HWND hWnd)
 
 	if (GetFileName(&of))
 	{
-		const size_t pathLen = wcslen(path) + 1;
+		//const size_t pathLen = wcslen(path) + 1;
 
 		if (playerConfig->songLengthsFile != NULL)
 		{
@@ -284,19 +284,19 @@ int CALLBACK WINAPI BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPAR
 
 void SelectHvscDirectory(HWND hWnd)
 {
-    BROWSEINFO bi = { 0 };
+	BROWSEINFO bi = { 0 };
 	bi.hwndOwner = hWnd;
 	// TODO localise
-    bi.lpszTitle = L"Select HVSC directory";
+	bi.lpszTitle = L"Select HVSC directory";
 	bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
 	bi.lpfn = BrowseCallbackProc;
 	LPITEMIDLIST pidl = BrowseForFolder(&bi);
 	if (pidl)
-    {
-        // get the name of the folder and put it in path
-		wchar_t path[MAX_PATH] = {0};
+	{
+		// get the name of the folder and put it in path
+		wchar_t path[MAX_PATH] = { 0 };
 		PathFromPIDL(pidl, path, ARRAYSIZE(path), true);
-		const size_t pathLen = wcslen(path) + 1;
+		//const size_t pathLen = wcslen(path) + 1;
 
 		if (playerConfig->hvscDirectory != NULL)
 		{
@@ -323,7 +323,7 @@ int CALLBACK ConfigDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			ConfigDlgInitDialog(hWnd);
 			break;
 		}
-	case WM_COMMAND:
+		case WM_COMMAND:
 		{
 			if (LOWORD(wParam) == IDC_BROWSE_BTN)
 			{
@@ -333,8 +333,8 @@ int CALLBACK ConfigDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			{
 				SelectHvscDirectory(hWnd);
 			}
-				break;
-			}
+			break;
+		}
 		case WM_DESTROY:
 		{
 			if (playerConfig)
@@ -345,16 +345,16 @@ int CALLBACK ConfigDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 				{
 					sidPlayer->SaveConfigToFile(playerConfig);
 					sidPlayer->SetConfig(playerConfig);
-		}
+				}
 
-		delete playerConfig;
+				delete playerConfig;
 				playerConfig = NULL;
+			}
+			break;
 		}
-		break;
-		}
-	default:
+		default:
 		{
-		return FALSE;
+			return FALSE;
 		}
 	}
 

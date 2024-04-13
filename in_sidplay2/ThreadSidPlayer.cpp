@@ -55,7 +55,7 @@ CThreadSidPlayer::~CThreadSidPlayer(void)
 }
 
 void CThreadSidPlayer::Init(void)
-{ 
+{
 	if(m_playerStatus != SP_STOPPED) Stop();
 
 	m_playerConfig.sidConfig = m_engine->config();
@@ -72,7 +72,7 @@ void CThreadSidPlayer::Init(void)
 		m_playerConfig.sidConfig.frequency = 44100;
 		m_playerConfig.sidConfig.playback = SidConfig::MONO;// sid2_mono;
 	}
-	//m_playerConfig.sidConfig.sampleFormat = SID2_LITTLE_SIGNED;	
+	//m_playerConfig.sidConfig.sampleFormat = SID2_LITTLE_SIGNED;
 
 	SetConfig(&m_playerConfig);
 }
@@ -289,7 +289,7 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 
 int CThreadSidPlayer::CurrentSubtune(void)
 {
-	if(m_tune.getStatus()) 
+	if(m_tune.getStatus())
 	{
 		const SidTuneInfo* tuneInfo = m_tune.getInfo();
 		return (tuneInfo ? tuneInfo->currentSong() : 0);
@@ -300,7 +300,7 @@ int CThreadSidPlayer::CurrentSubtune(void)
 void CThreadSidPlayer::PlaySubtune(int subTune)
 {	
 	Stop();
-	m_tune.selectSong(subTune);	
+	m_tune.selectSong(subTune);
 	m_currentTuneLengthMs = m_sidDatabase.lengthMs(m_tune);
 	if ((m_playerConfig.playLimitEnabled) && (m_currentTuneLengthMs <= 0))
 	{
@@ -397,7 +397,7 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 		ofstream outFile(fileName);
 		if (conf->frequency != 44100)
 		{
-		outFile << "PlayFrequency=" << conf->frequency << endl;
+			outFile << "PlayFrequency=" << conf->frequency << endl;
 		}
 
 		if (conf->playback == SidConfig::STEREO)
@@ -407,40 +407,40 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 
 		if (conf->defaultC64Model)
 		{
-		outFile << "C64Model=" << conf->defaultC64Model << endl;
+			outFile << "C64Model=" << conf->defaultC64Model << endl;
 		}
 
 
 		if (conf->forceC64Model)
 		{
-		outFile << "C64ModelForced=" << conf->forceC64Model << endl;
+			outFile << "C64ModelForced=" << conf->forceC64Model << endl;
 		}
 
 		if (conf->defaultSidModel)
 		{
-		outFile << "SidModel=" << conf->defaultSidModel << endl;
+			outFile << "SidModel=" << conf->defaultSidModel << endl;
 		}
 
 		if (conf->forceSidModel)
 		{
-		outFile << "SidModelForced=" << conf->forceSidModel << endl;
+			outFile << "SidModelForced=" << conf->forceSidModel << endl;
 		}
-	
+
 		//outFile << "Sid2ModelForced=" << conf->forceSecondSidModel << endl;
 
 		if (plconf->playLimitEnabled)
 		{
-		outFile<<"PlayLimitEnabled="<<plconf->playLimitEnabled<<endl;
+			outFile << "PlayLimitEnabled=" << plconf->playLimitEnabled << endl;
 		}
 
 		if (plconf->playLimitSec != 120)
 		{
-		outFile<<"PlayLimitTime="<<plconf->playLimitSec<<endl;
+			outFile << "PlayLimitTime=" << plconf->playLimitSec << endl;
 		}
 
 		if (plconf->useSongLengthFile)
 		{
-		outFile<<"UseSongLengthFile="<<plconf->useSongLengthFile<<endl;
+			outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
 		}
 
 		if ((!plconf->useSongLengthFile) || (plconf->songLengthsFile == NULL))
@@ -454,7 +454,7 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 
 		if (plconf->useSTILfile)
 		{
-		outFile<<"UseSTILFile="<<plconf->useSTILfile<<endl;
+			outFile << "UseSTILFile=" << plconf->useSTILfile << endl;
 		}
 
 		if (plconf->hvscDirectory == NULL)
@@ -473,7 +473,7 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 
 		if (plconf->useSongLengthFile)
 		{
-		outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
+			outFile << "UseSongLengthFile=" << plconf->useSongLengthFile << endl;
 		}
 
 		outFile << "VoiceConfig=";
@@ -488,12 +488,12 @@ void CThreadSidPlayer::SaveConfigToFile(PlayerConfig *plconf)
 
 		if (plconf->pseudoStereo)
 		{
-		outFile << "PseudoStereo=" << plconf->pseudoStereo << endl;
+			outFile << "PseudoStereo=" << plconf->pseudoStereo << endl;
 		}
 
 		if (plconf->sid2Model != SidConfig::sid_model_t::MOS6581)
 		{
-		outFile << "Sid2Model=" << plconf->sid2Model << endl;
+			outFile << "Sid2Model=" << plconf->sid2Model << endl;
 		}
 
 		outFile.close();

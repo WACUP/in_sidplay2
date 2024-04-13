@@ -147,7 +147,7 @@ private:
      *   C1       C2           C3
      * L 1/1.707  0.707/1.707  0.0
      * R 0.0      0.707/1.707  1/1.707
-     * 
+     *
      * FIXME
      * it seems that scaling down the summed signals is not the correct way of mixing, see:
      * http://dsp.stackexchange.com/questions/3581/algorithms-to-mix-audio-signals-without-clipping

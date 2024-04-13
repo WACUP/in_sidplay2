@@ -30,8 +30,8 @@ namespace libsidplayfp
 void InterruptSource::interrupt()
 {
     if (!interruptTriggered())
-{
-    triggerInterrupt();
+    {
+        triggerInterrupt();
         setIrq();
     }
 
@@ -55,7 +55,7 @@ void InterruptSource::setIrq()
     {
         if (!asserted)
         {
-    parent.interrupt(true);
+            parent.interrupt(true);
             asserted = true;
         }
     }
@@ -84,8 +84,8 @@ bool InterruptSource::isTriggered(uint8_t interruptMask)
         if (scheduled)
         {
             eventScheduler.cancel(interruptEvent);
-    scheduled = false;
-}
+            scheduled = false;
+        }
     }
     return false;
 }
@@ -95,7 +95,7 @@ void InterruptSource::set(uint8_t interruptMask)
     if (interruptMask & INTERRUPT_REQUEST)
     {
         icr |= interruptMask & ~INTERRUPT_REQUEST;
-}
+    }
     else
     {
         icr &= ~interruptMask;

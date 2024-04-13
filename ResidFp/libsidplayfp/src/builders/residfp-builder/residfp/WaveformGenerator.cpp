@@ -206,7 +206,7 @@ inline bool do_writeback(unsigned int waveform_old, unsigned int waveform_new, b
     if (is6581 &&
             ((((waveform_old & 0x3) == 0x1) && ((waveform_new & 0x3) == 0x2))
             || (((waveform_old & 0x3) == 0x2) && ((waveform_new & 0x3) == 0x1))))
-{
+    {
         // fixes
         // noise_writeback_check_9_to_A_old
         // noise_writeback_check_9_to_E_old
@@ -217,7 +217,7 @@ inline bool do_writeback(unsigned int waveform_old, unsigned int waveform_new, b
         return false;
     }
     if (waveform_old == 0xc)
-{
+    {
         // fixes
         // noise_writeback_check_C_to_A_new
         return false;
@@ -295,7 +295,7 @@ void WaveformGenerator::write_shift_register()
 #endif
             // the output pulls down the SR bits
             shift_register = shift_register & (shift_mask | get_noise_writeback(waveform_output));
-        noise_output &= waveform_output;
+            noise_output &= waveform_output;
         }
         else
         {

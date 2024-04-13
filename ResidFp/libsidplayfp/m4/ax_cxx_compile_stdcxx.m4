@@ -114,7 +114,7 @@ AC_DEFUN([AX_CXX_COMPILE_STDCXX], [dnl
           switch=-std:c++${alternative}
           cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx$1_${switch}_MSVC])
         else
-        cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx$1_$switch])
+          cachevar=AS_TR_SH([ax_cv_cxx_compile_cxx$1_$switch])
         fi
         AC_CACHE_CHECK(whether $CXX supports C++$1 features with $switch,
                        $cachevar,
