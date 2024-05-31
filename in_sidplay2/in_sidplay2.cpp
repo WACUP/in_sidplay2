@@ -1,5 +1,5 @@
-#define PLUGIN_VERSION L"2.7.0.10"
-#define PLUGIN_LIBRARY_BUILD_DATE L"2.7.0 - 29 Mar 2024"
+#define PLUGIN_VERSION L"2.7.1.10"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.7.1 - 19 May 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -718,7 +718,7 @@ extern In_Module plugin =
 	setvolume,
 	setpan,
 
-	0,0,0,0,0,0,0,0,0, // visualization calls filled in by winamp
+	IN_INIT_VIS_RELATED_CALLS,
 
 	0,0, // dsp calls filled in by winamp
 

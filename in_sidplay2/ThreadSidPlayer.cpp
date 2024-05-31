@@ -216,7 +216,7 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 			//playerObj->m_decodedSampleCount += decodedLen / numChn / (bps>>3);
 			//write it to vis subsystem
 			playerObj->m_inmod->SAAddPCMData(playerObj->m_decodeBuf,numChn,bps,playerObj->m_playTimems);
-			playerObj->m_inmod->VSAAddPCMData(playerObj->m_decodeBuf,numChn,bps,playerObj->m_playTimems);
+			/*playerObj->m_inmod->VSAAddPCMData(playerObj->m_decodeBuf,numChn,bps,playerObj->m_playTimems);*/
 
 			playerObj->m_decodedSampleCount += decodedLen / numChn / (bps>>3);
 			playerObj->m_playTimems =(playerObj->m_decodedSampleCount * 1000) / playerObj->m_playerConfig.sidConfig.frequency;
