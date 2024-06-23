@@ -25,8 +25,6 @@
 #include <cassert>
 #include <cstring>
 #include <cmath>
-#include <iostream>
-#include <sstream>
 
 #include "..\siddefs-fp.h"
 
@@ -40,21 +38,8 @@
 #  include <arm_neon.h>
 #endif
 
-#ifdef HAVE_CXX11
-#  include <mutex>
-#endif
-
 namespace reSIDfp
 {
-
-typedef std::map<std::string, matrix_t> fir_cache_t;
-
-/// Cache for the expensive FIR table computation results.
-/// dro change to avoid doing this on dll loading if not then used during run
-fir_cache_t *FIR_CACHE = 0;
-#ifdef HAVE_CXX11
-std::mutex FIR_CACHE_Lock;
-#endif
 
 /// Maximum error acceptable in I0 is 1e-6, or ~96 dB.
 constexpr double I0E = 1e-6;
@@ -305,37 +290,9 @@ SincResampler::SincResampler(double clockFrequency, double samplingFrequency, do
         // The filter test program indicates that the filter performs well, though.
     }
 
-    if (!FIR_CACHE)
-    {
-        FIR_CACHE = new fir_cache_t();
-    }
-
-    // Create the map key
-    std::ostringstream o;
-    o << firN << "," << firRES << "," << cyclesPerSampleD;
-    const std::string firKey = o.str();
-
-#ifdef HAVE_CXX11
-    std::lock_guard<std::mutex> lock(FIR_CACHE_Lock);
-#endif
-
-    fir_cache_t::iterator lb = FIR_CACHE->lower_bound(firKey);
-
-    // The FIR computation is expensive and we set sampling parameters often, but
-    // from a very small set of choices. Thus, caching is used to speed initialization.
-    if (lb != FIR_CACHE->end() && !(FIR_CACHE->key_comp()(firKey, lb->first)))
-    {
-        firTable = &(lb->second);
-    }
-    else
     {
         // Allocate memory for FIR tables.
-        matrix_t tempTable(firRES, firN);
-#ifdef HAVE_CXX11
-        firTable = &(FIR_CACHE->emplace_hint(lb, fir_cache_t::value_type(firKey, tempTable))->second);
-#else
-        firTable = &(FIR_CACHE->insert(lb, fir_cache_t::value_type(firKey, tempTable))->second);
-#endif
+        firTable = new matrix_t(firRES, firN);
 
         // The cutoff frequency is midway through the transition band, in effect the same as nyquist.
         const double wc = M_PI;
@@ -366,6 +323,11 @@ SincResampler::SincResampler(double clockFrequency, double samplingFrequency, do
             }
         }
     }
+}
+
+SincResampler::~SincResampler()
+{
+    delete firTable;
 }
 
 bool SincResampler::input(int input)

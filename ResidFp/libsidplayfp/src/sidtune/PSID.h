@@ -58,7 +58,7 @@ protected:
     PSID() {}
 
 public:
-    virtual ~PSID() {}
+    ~PSID() override = default;
 
     /**
      * @return pointer to a SidTune or 0 if not a PSID file
@@ -68,12 +68,12 @@ public:
 
     //virtual const char *createMD5(char *md5) override;
 
-    virtual const char *createMD5New(char *md5) override;
+    const char *createMD5New(char *md5) override;
 
 private:
     // prevent copying
-    PSID(const PSID&);
-    PSID& operator=(PSID&);
+    PSID(const PSID&) = delete;
+    PSID& operator=(PSID&) = delete;
 };
 
 }

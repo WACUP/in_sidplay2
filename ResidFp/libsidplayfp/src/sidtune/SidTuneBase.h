@@ -273,8 +273,8 @@ private:  // ---------------------------------------------------------------
 
 private:
     // prevent copying
-    SidTuneBase(const SidTuneBase&);
-    SidTuneBase& operator=(SidTuneBase&);
+    SidTuneBase(const SidTuneBase&) = delete;
+    SidTuneBase& operator=(SidTuneBase&) = delete;
 };
 
 }

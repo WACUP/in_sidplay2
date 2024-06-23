@@ -194,7 +194,8 @@ bool SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
     inFile.seekg(0, inFile.end);
     const int fileLen = inFile.tellg();
 
-    if (fileLen <= 0)
+    // dro change based on some crash reports
+    if ((fileLen <= 0) || (fileLen > SIZE_MAX))
     {
         return false;/*/
         throw loadError(ERR_EMPTY);/**/
