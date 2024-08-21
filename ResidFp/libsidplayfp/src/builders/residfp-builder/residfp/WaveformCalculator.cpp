@@ -304,6 +304,7 @@ matrix_t* WaveformCalculator::buildPulldownTable(ChipModel model, CombinedWavefo
             pdTable[wav][idx] = calculatePulldown(distancetable, cfg.topbit, cfg.pulsestrength, cfg.threshold, idx);
         }
     }
+
     return &(PULLDOWN_CACHE->emplace_hint(lb, cw_cache_t::value_type(cfgArray, pdTable))->second);
 }
 
