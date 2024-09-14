@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.9.0.11"
+#define PLUGIN_VERSION L"2.9.0.12"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.9.0 - 12 August 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -258,8 +258,8 @@ void setoutputtime(int time_in_ms)
 }
 
 // standard volume/pan functions
-void setvolume(int volume) { plugin.outMod->SetVolume(volume); }
-void setpan(int pan) { plugin.outMod->SetPan(pan); }
+void setvolume(int volume) { if (plugin.outMod) plugin.outMod->SetVolume(volume); }
+void setpan(int pan) { if (plugin.outMod) plugin.outMod->SetPan(pan); }
 
 // this gets called when the use hits Alt+3 to get the file info.
 // if you need more info, ask me :)

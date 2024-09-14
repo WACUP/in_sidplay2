@@ -83,7 +83,10 @@ void CThreadSidPlayer::Play(void)
 	if(m_playerStatus == SP_PAUSED) 
 	{
 		m_playerStatus = SP_RUNNING;
-		m_inmod->outMod->Pause(0);
+		if (m_inmod->outMod)
+		{
+			m_inmod->outMod->Pause(0);
+		}
 		ResumeThread(m_threadHandle);
 		return;	
 	}
@@ -101,8 +104,9 @@ void CThreadSidPlayer::Play(void)
 		m_engine->config(m_playerConfig.sidConfig);
 		m_playerConfig.sidConfig.playback = playback;
 
-		maxLatency = (m_inmod->outMod ? m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,
-												  numChann, PLAYBACK_BIT_PRECISION, -1, -1) : -1);
+		maxLatency = (m_inmod->outMod && m_playerConfig.sidConfig.frequency  && numChann ?
+					  m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency, numChann,
+													PLAYBACK_BIT_PRECISION, -1, -1) : -1);
 		if (maxLatency < 0)
 		{
 			return;
@@ -129,7 +133,10 @@ void CThreadSidPlayer::Pause(void)
 	if(m_playerStatus == SP_RUNNING)
 	{
 		SuspendThread(m_threadHandle);
-		m_inmod->outMod->Pause(1);
+		if (m_inmod->outMod)
+		{
+			m_inmod->outMod->Pause(1);
+		}
 		m_playerStatus = SP_PAUSED;
 	}
 }
@@ -156,7 +163,7 @@ void CThreadSidPlayer::Stop(void)
 
 	if(m_inmod->outMod != NULL && m_inmod->outMod->Close != NULL) m_inmod->outMod->Close();
 	// deinitialize visualization
-	m_inmod->SAVSADeInit();
+	if (m_inmod->outMod) m_inmod->SAVSADeInit();
 }
 
 void CThreadSidPlayer::LoadTune(const char* name)
@@ -318,7 +325,7 @@ const SidTuneInfo* CThreadSidPlayer::GetTuneInfo(void)
 
 int CThreadSidPlayer::GetPlayTime(void)
 {
-	return m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()); 
+	return (m_inmod->outMod ? m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()) : 0);
 	//return ((m_timer->time()*1000)/m_timer->timebase()) + (m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()); 
 }
 
