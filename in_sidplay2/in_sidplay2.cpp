@@ -19,6 +19,7 @@
 #include <sdk/Agave/Language/api_language.h>
 #include <loader/loader/paths.h>
 #include <loader/loader/utils.h>
+#include <loader/loader/runtime_helper.h>
 #include "helpers.h"
 
 #include <fcntl.h>
@@ -1189,3 +1190,5 @@ extern "C" __declspec(dllexport) void winampGetExtendedRead_close(intptr_t handl
 	}
 #endif
 }
+
+RUNTIME_HELPER_HANDLER
