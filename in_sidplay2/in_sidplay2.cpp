@@ -1,5 +1,5 @@
-#define PLUGIN_VERSION L"2.9.0.12"
-#define PLUGIN_LIBRARY_BUILD_DATE L"2.9.0 - 12 August 2024"
+#define PLUGIN_VERSION L"2.10.1.14"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.10.1 -20 October 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -20,6 +20,7 @@
 #include <loader/loader/paths.h>
 #include <loader/loader/utils.h>
 #include <loader/loader/runtime_helper.h>
+#include <Agave/Config/api_config.h>
 #include "helpers.h"
 
 #include <fcntl.h>
@@ -1089,6 +1090,19 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			wcsncpy(ret, L"1", retlen);
 		}
 		retval = 1;
+	}
+	else if (!_stricmp(metadata, "samplerate"))
+	{
+		I2WStr(sidPlayer->GetCurrentConfig().sidConfig.frequency, ret, retlen);
+		return 1;
+	}
+	else if (!_stricmp(metadata, "bitrate"))
+	{
+		const auto config = sidPlayer->GetCurrentConfig();
+		const int numChann = (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
+							  (config.sidConfig.playback == SidConfig::STEREO) ? 2 : 1 : 1);
+		I2WStr(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen);
+		return 1;
 	}
 
 	return retval;
