@@ -117,12 +117,11 @@ void FilterModelConfig6581::setFilterRange(double adjustment)
 
 FilterModelConfig6581::FilterModelConfig6581() :
     FilterModelConfig(
-        1.5,     // voice voltage range
-        5.075,   // voice DC voltage
-        470e-12, // capacitor value
-        12.18,   // Vdd
-        1.31,    // Vth
-        20e-6,   // uCox
+        1.5,                    // voice voltage range FIXME should theoretically be ~3,571V
+        470e-12,                // capacitor value
+        12. * VOLTAGE_SKEW,     // Vdd
+        1.31,                   // Vth
+        20e-6,                  // uCox
         opamp_voltage,
         OPAMP_SIZE
     ),
@@ -133,6 +132,16 @@ FilterModelConfig6581::FilterModelConfig6581() :
     dac(DAC_BITS)
 {
     dac.kinkedDac(MOS6581);
+
+    {
+        Dac envDac(8);
+        envDac.kinkedDac(MOS6581);
+        for(int i=0; i<256; i++)
+        {
+            const double envI = envDac.getOutput(i);
+            voiceDC[i] = 5. * VOLTAGE_SKEW + (0.2143 * envI);
+        }
+    }
 
     // Create lookup tables for gains / summers.
 
@@ -241,19 +250,27 @@ FilterModelConfig6581::FilterModelConfig6581() :
         }
     };
 
-    auto thdSummer = std::thread(filterSummer);
-    auto thdMixer = std::thread(filterMixer);
-    auto thdGain = std::thread(filterGain);
-    auto thdResonance = std::thread(filterResonance);
-    auto thdVcrVg = std::thread(filterVcrVg);
-    auto thdVcrIds = std::thread(filterVcrIds);
+#if defined(HAVE_CXX20) && defined(__cpp_lib_jthread)
+    using sidThread = std::jthread;
+#else
+    using sidThread = std::thread;
+#endif
 
+    sidThread thdSummer(filterSummer);
+    sidThread thdMixer(filterMixer);
+    sidThread thdGain(filterGain);
+    sidThread thdResonance(filterResonance);
+    sidThread thdVcrVg(filterVcrVg);
+    sidThread thdVcrIds(filterVcrIds);
+
+#if !defined(HAVE_CXX20) || !defined(__cpp_lib_jthread)
     thdSummer.join();
     thdMixer.join();
     thdGain.join();
     thdResonance.join();
     thdVcrVg.join();
     thdVcrIds.join();
+#endif
 }
 
 unsigned short* FilterModelConfig6581::getDAC(double adjustment) const
@@ -269,11 +286,6 @@ unsigned short* FilterModelConfig6581::getDAC(double adjustment) const
     }
 
     return f0_dac;
-}
-
-Integrator* FilterModelConfig6581::buildIntegrator()
-{
-    return new Integrator6581(this, WL_snake);
 }
 
 } // namespace reSIDfp

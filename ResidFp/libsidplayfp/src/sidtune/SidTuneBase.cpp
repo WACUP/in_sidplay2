@@ -183,6 +183,9 @@ void SidTuneBase::placeSidTuneInC64mem(sidmemory& mem)
 
 bool SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
 {
+    // TODO can this be improved for windows specificness
+    //      to reduce the time it takes to get & load the
+    //      file contents especially for ml_ll vs hvsc..?
     std::ifstream inFile(fileName, std::ifstream::binary);
 
     if (!inFile.is_open())

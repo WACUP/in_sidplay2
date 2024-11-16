@@ -130,12 +130,11 @@ FilterModelConfig8580* FilterModelConfig8580::getInstance()
 
 FilterModelConfig8580::FilterModelConfig8580() :
     FilterModelConfig(
-        0.24,   // voice voltage range FIXME measure
-        4.84,   // voice DC voltage FIXME measure
-        22e-9,  // capacitor value
-        9.09,   // Vdd
-        0.80,   // Vth
-        100e-6, // uCox
+        0.24,               // voice voltage range FIXME should theoretically be ~0,474V
+        22e-9,              // capacitor value
+        9. * VOLTAGE_SKEW,  // Vdd
+        0.80,               // Vth
+        100e-6,             // uCox
         opamp_voltage,
         OPAMP_SIZE
     )
@@ -197,20 +196,23 @@ FilterModelConfig8580::FilterModelConfig8580() :
         buildResonanceTable(opampModel, resGain);
     };
 
-    auto thdSummer = std::thread(filterSummer);
-    auto thdMixer = std::thread(filterMixer);
-    auto thdGain = std::thread(filterGain);
-    auto thdResonance = std::thread(filterResonance);
+#if defined(HAVE_CXX20) && defined(__cpp_lib_jthread)
+    using sidThread = std::jthread;
+#else
+    using sidThread = std::thread;
+#endif
 
+    sidThread thdSummer(filterSummer);
+    sidThread thdMixer(filterMixer);
+    sidThread thdGain(filterGain);
+    sidThread thdResonance(filterResonance);
+
+#if !defined(HAVE_CXX20) || !defined(__cpp_lib_jthread)
     thdSummer.join();
     thdMixer.join();
     thdGain.join();
     thdResonance.join();
-}
-
-Integrator* FilterModelConfig8580::buildIntegrator()
-{
-    return new Integrator8580(this);
+#endif
 }
 
 } // namespace reSIDfp

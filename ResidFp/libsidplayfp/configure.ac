@@ -1,6 +1,6 @@
 m4_define([lib_major], [2])
-m4_define([lib_minor], [9])
-m4_define([lib_level], [0])
+m4_define([lib_minor], [11])
+m4_define([lib_level], [0a])
 m4_define([lib_version], [lib_major.lib_minor.lib_level])
 
 AC_PREREQ([2.62])
@@ -37,12 +37,15 @@ AC_PROG_CXX
 dnl Use C++ for tests.
 AC_LANG([C++])
 
-AX_CXX_COMPILE_STDCXX([17], [noext], [optional])
-AS_IF([test $ax_cv_cxx_compile_cxx17__std_cpp17 != "yes"], [
-    AX_CXX_COMPILE_STDCXX([14], [noext], [optional])
-    AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 != "yes"],
-        [AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])]
-    )
+AX_CXX_COMPILE_STDCXX([20], [noext], [optional])
+AS_IF([test $ax_cv_cxx_compile_cxx20__std_cpp20 != "yes"], [
+    AX_CXX_COMPILE_STDCXX([17], [noext], [optional])
+    AS_IF([test $ax_cv_cxx_compile_cxx17__std_cpp17 != "yes"], [
+        AX_CXX_COMPILE_STDCXX([14], [noext], [optional])
+        AS_IF([test $ax_cv_cxx_compile_cxx14__std_cpp14 != "yes"],
+            [AX_CXX_COMPILE_STDCXX([11], [noext], [mandatory])]
+        )
+    ])
 ])
 
 dnl check for hidden visibility support
@@ -98,9 +101,9 @@ dnl libtool-style version-info number
 #
 # Increase the age value only if the changes made to the ABI are backward compatible.
 
-LIBSIDPLAYCUR=10
-LIBSIDPLAYREV=33
-LIBSIDPLAYAGE=4
+LIBSIDPLAYCUR=11
+LIBSIDPLAYREV=36
+LIBSIDPLAYAGE=5
 LIBSIDPLAYVERSION=$LIBSIDPLAYCUR:$LIBSIDPLAYREV:$LIBSIDPLAYAGE
 
 LIBSTILVIEWCUR=0

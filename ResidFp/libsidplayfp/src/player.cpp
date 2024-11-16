@@ -192,6 +192,13 @@ void Player::mute(unsigned int sidNum, unsigned int voice, bool enable)
         s->voice(voice, enable);
 }
 
+void Player::filter(unsigned int sidNum, bool enable)
+{
+    sidemu *s = m_mixer.getSid(sidNum);
+    if (s != nullptr)
+        s->filter(enable);
+}
+
 /**
  * @throws MOS6510::haltInstruction
  */
@@ -203,6 +210,8 @@ void Player::run(unsigned int events)
 
 uint_least32_t Player::play(short *buffer, uint_least32_t count)
 {
+    static constexpr unsigned int CYCLES = 3000;
+
     // Make sure a tune is loaded
     if (m_tune == nullptr)
         return 0;
@@ -227,7 +236,8 @@ uint_least32_t Player::play(short *buffer, uint_least32_t count)
                     // Clock chips and mix into output buffer
                     while ((m_isPlaying != state_t::STOPPED) && m_mixer.notFinished())
                     {
-                        run(sidemu::OUTPUTBUFFERSIZE);
+                        if (!m_mixer.wait())
+                            run(CYCLES);
 
                         m_mixer.clockChips();
                         m_mixer.doMix();
@@ -240,7 +250,7 @@ uint_least32_t Player::play(short *buffer, uint_least32_t count)
                     int size = m_c64.getMainCpuSpeed() / m_cfg.frequency;
                     while ((m_isPlaying != state_t::STOPPED) && --size)
                     {
-                        run(sidemu::OUTPUTBUFFERSIZE);
+                        run(CYCLES);
 
                         m_mixer.clockChips();
                         m_mixer.resetBufs();
@@ -253,7 +263,7 @@ uint_least32_t Player::play(short *buffer, uint_least32_t count)
                 int size = m_c64.getMainCpuSpeed() / m_cfg.frequency;
                 while ((m_isPlaying != state_t::STOPPED) && --size)
                 {
-                    run(sidemu::OUTPUTBUFFERSIZE);
+                    run(CYCLES);
                 }
             }
         }
@@ -364,6 +374,7 @@ bool Player::config(const SidConfig &cfg, bool force)
         }
         catch (configError const &e)
         {
+            sidRelease();
             m_errorString = e.message();
             m_cfg.sidEmulation = nullptr;
             if (&m_cfg != &cfg)
@@ -397,7 +408,7 @@ c64::model_t Player::c64model(SidConfig::c64_model_t defaultModel, bool forced)
     c64::model_t model;
 
     // Use preferred speed if forced or if song speed is unknown
-    if (forced || clockSpeed == SidTuneInfo::CLOCK_UNKNOWN || clockSpeed == SidTuneInfo::CLOCK_ANY)
+    if (forced || (clockSpeed == SidTuneInfo::CLOCK_UNKNOWN) || (clockSpeed == SidTuneInfo::CLOCK_ANY))
     {
         switch (defaultModel)
         {

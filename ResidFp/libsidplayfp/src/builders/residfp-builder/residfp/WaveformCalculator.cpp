@@ -33,9 +33,9 @@ namespace reSIDfp
 /**
  * Combined waveform model parameters.
  */
-typedef float (*distance_t)(float, int);
+using distance_t = float (*)(float, int);
 
-typedef struct
+using CombinedWaveformConfig = struct
 {
     distance_t distFunc;
     float threshold;
@@ -43,9 +43,9 @@ typedef struct
     float pulsestrength;
     float distance1;
     float distance2;
-} CombinedWaveformConfig;
+};
 
-typedef std::map<const CombinedWaveformConfig*, matrix_t> cw_cache_t;
+using cw_cache_t = std::map<const CombinedWaveformConfig*, matrix_t>;
 
 // dro change to avoid this causing
 // a static initialisation on load
@@ -90,27 +90,27 @@ static float quadraticDistance(float distance, int i)
  */
 const CombinedWaveformConfig configAverage[2][5] =
 {
-    { /* 6581 R3 4785 sampled by Trurl */
-        // TS  error 2298 (339/32768)
-        { exponentialDistance, 0.776678205f, 1.18439901f, 0.f, 2.25732255f, 5.12803745f },
-        // PT  error  582 (57/32768)
-        { linearDistance, 1.01866758f, 1.f, 2.69177628f, 0.0233543925f, 0.0850229636f },
-        // PS  error 9242 (679/32768)
-        { linearDistance, 2.20329857f, 1.04501438f, 10.5146885f, 0.277294368f, 0.143747061f },
-        // PTS error 2799 (71/32768)
-        { linearDistance, 1.35652959f, 1.09051275f, 3.21098137f, 0.16658926f, 0.370252877f },
+    { /* 6581 R3 0486S sampled by Trurl */
+        // TS  error  3555 (324/32768) [RMS: 73.98]
+        { exponentialDistance,  0.877322257f, 1.11349654f, 0.f, 2.14537621f, 9.08618164f },
+        // PT  error  4590 (124/32768) [RMS: 68.90]
+        { linearDistance, 0.941692829f, 1.f, 1.80072665f, 0.033124879f, 0.232303441f },
+        // PS  error 19352 (763/32768) [RMS: 96.91]
+        { linearDistance, 1.66494179f, 1.03760982f, 5.62705326f, 0.291590303f, 0.283631504f },
+        // PTS error  5068 ( 94/32768) [RMS: 41.69]
+        { linearDistance, 1.09762526f, 0.975265801f, 1.52196741f, 0.151528224f, 0.841949463f },
         // NP  guessed
         { exponentialDistance, 0.96f, 1.f, 2.5f, 1.1f, 1.2f },
     },
-    { /* 8580 R5 5092 25 sampled by reFX-Mike */
-        // TS  error 1212 (183/32768)
-        { exponentialDistance, 0.684999049f, 0.916620493f, 0.f, 1.14715648f, 2.02339816f },
-        // PT  error 6153 (295/32768)
-        { exponentialDistance,  0.940367579, 1.f, 1.26695442f, 0.976729453f, 1.57954705f },
-        // PS  error 7620 (454/32768)
-        { quadraticDistance, 0.963866293f, 1.22095084f, 1.01380754f, 0.0110885892f, 0.381492466f },
-        // PTS error 3701 (117/32768)
-        { linearDistance, 0.976761818f, 0.202727556f, 0.988633931f, 0.939373314f, 9.37139416f },
+    { /* 8580 R5 1088 sampled by reFX-Mike */
+        // TS  error 10788 (354/32768) [RMS: 58.31]
+        { exponentialDistance, 0.841851234f, 1.09233654f, 0.f, 1.85262764f, 6.22224379f },
+        // PT  error 10635 (289/32768) [RMS: 108.81]
+        { exponentialDistance, 0.929835618f, 1.f, 1.12836814f, 1.10453653f, 1.48065746f },
+        // PS  error 12255 (554/32768) [RMS: 102.27]
+        { quadraticDistance, 0.911938608f, 0.996440411f, 1.2278074f, 0.000117214302f, 0.18948476f },
+        // PTS error  6995 (139/32768) [RMS: 55.78]
+        { exponentialDistance, 0.932317019f, 1.03892183f, 1.2068342f, 0.891974986f, 1.42451835f },
         // NP  guessed
         { exponentialDistance, 0.95f, 1.f, 1.15f, 1.f, 1.45f },
     },
@@ -119,26 +119,26 @@ const CombinedWaveformConfig configAverage[2][5] =
 const CombinedWaveformConfig configWeak[2][5] =
 {
     { /* 6581 R2 4383 sampled by ltx128 */
-        // TS  error 1858 (204/32768)
+        // TS  error 1858 (204/32768) [RMS: 62.49]
         { exponentialDistance, 0.886832297f, 1.f, 0.f, 2.14438701f, 9.51839447f },
-        // PT  error  612 (102/32768)
+        // PT  error  612 (102/32768) [RMS: 43.71]
         { linearDistance, 1.01262534f, 1.f, 2.46070528f, 0.0537485816f, 0.0986242667f },
-        // PS  error 8135 (575/32768)
+        // PS  error 8135 (575/32768) [RMS: 75.10]
         { linearDistance, 2.14896345f, 1.0216713f, 10.5400085f, 0.244498149f, 0.126134038f },
-        // PTS error 2505 (63/32768)
+        // PTS error 2505 (63/32768) [RMS: 24.37]
         { linearDistance, 1.29061747f, 0.9754318f, 3.15377498f, 0.0968349651f, 0.318573922f },
         // NP  guessed
         { exponentialDistance, 0.96f, 1.f, 2.5f, 1.1f, 1.2f },
     },
-    { /* 8580 R5 1087 sampled by reFX-Mike */
-        // TS  error 1627 (137/32768)
-        { exponentialDistance, 0.795011938f, 1.54905677f, 0.f, 1.79432333f, 2.24898171f },
-        // PT  error 7898 (162/32768)
-        { exponentialDistance, 0.9482705f, 1.f, 1.21793139f, 1.04166055f, 1.37272894f },
-        // PS  error 9804 (337/32768)
-        { quadraticDistance, 0.954935849f, 1.00321376f, 1.28759611f, 0.000331178948f, 0.151375741f },
-        // PTS error 3184 (56/32768)
-        { linearDistance, 0.945096612f, 1.06510091f, 0.905796111f, 1.05054963f, 1.4661454f },
+    { /* 8580 R5 4887 sampled by reFX-Mike */
+        // TS  error  745 (77/32768) [RMS: 53.74]
+        { exponentialDistance, 0.816124022f, 1.31208789f, 0.f, 1.92347884f, 2.35027933f },
+        // PT  error 7199 (192/32768) [RMS: 88.43]
+        { exponentialDistance, 0.917997837f, 1.f, 1.01248944f, 1.05761552f, 1.37529826f },
+        // PS  error 9864 (333/32768) [RMS: 86.29]
+        { quadraticDistance, 0.970038712f, 1.00844693f, 1.30298805f, 0.0097996993f, 0.146854922f },
+        // PTS error 4809 (60/32768) [RMS: 45.37]
+        { exponentialDistance, 0.941834152f, 1.06401193f, 0.991132736f, 0.995310068f, 1.41105855f },
         // NP  guessed
         { exponentialDistance, 0.95f, 1.f, 1.15f, 1.f, 1.45f },
     },
@@ -147,26 +147,26 @@ const CombinedWaveformConfig configWeak[2][5] =
 const CombinedWaveformConfig configStrong[2][5] =
 {
     { /* 6581 R2 0384 sampled by Trurl */
-        // TS  error 20337 (1579/32768)
+        // TS  error 20337 (1579/32768) [RMS: 88.57]
         { exponentialDistance, 0.000637792516f, 1.56725872f, 0.f, 0.00036806846f, 1.51800942f },
-        // PT  error  5194 (240/32768)
+        // PT  error  5194 (240/32768) [RMS: 83.54]
         { linearDistance, 0.924824238f, 1.f, 1.96749473f, 0.0891806409f, 0.234794483f },
-        // PS  error 31015 (2181/32768)
+        // PS  error 31015 (2181/32768) [RMS: 114.99]
         { linearDistance, 1.2328074f, 0.73079139f, 3.9719491f, 0.00156516861f, 0.314677745f },
-        // PTS error  9874 (201/32768)
+        // PTS error  9874 (201/32768) [RMS: 52.30]
         { linearDistance, 1.08558261f, 0.857638359f, 1.52781796f, 0.152927235f, 1.02657032f },
         // NP  guessed
         { exponentialDistance, 0.96f, 1.f, 2.5f, 1.1f, 1.2f },
     },
     { /* 8580 R5 1489 sampled by reFX-Mike */
-        // TS  error 4837 (388/32768)
+        // TS  error  4837 (388/32768) [RMS: 76.07]
         { exponentialDistance, 0.89762634f, 56.7594185f, 0.f, 7.68995237f, 12.0754194f },
-        // PT  error 9298 (506/32768)
+        // PT  error  9298 (506/32768) [RMS: 128.15]
         { exponentialDistance,  0.867885351f, 1.f, 1.4511894f, 1.07057536f, 1.43333757f },
-        // PS  error 13168 (718/32768)
+        // PS  error 13168 (718/32768) [RMS: 123.35]
         { quadraticDistance, 0.89255774f, 1.2253896f, 1.75615835f, 0.0245045591f, 0.12982437f },
-        // PTS error 6879 (309/32768)
-        { linearDistance, 0.913530529f, 0.96415776f, 0.931084037f, 1.05731869f, 1.80506349f },
+        // PTS error  6702 (300/32768) [RMS: 71.01]
+        { linearDistance, 0.91124934f, 0.963609755f, 0.909965038f, 1.07445884f, 1.82399702f },
         // NP  guessed
         { exponentialDistance, 0.95f, 1.f, 1.15f, 1.f, 1.45f },
     },
@@ -188,11 +188,11 @@ static unsigned int triXor(unsigned int val)
  */
 short calculatePulldown(float distancetable[], float topbit, float pulsestrength, float threshold, unsigned int accumulator)
 {
-    unsigned char bit[12];
+    float bit[12];
 
     for (unsigned int i = 0; i < 12; i++)
     {
-        bit[i] = (accumulator & (1u << i)) != 0 ? 1 : 0;
+        bit[i] = (accumulator & (1u << i)) != 0 ? 1.f : 0.f;
     }
 
     bit[11] *= topbit;
@@ -209,7 +209,7 @@ short calculatePulldown(float distancetable[], float topbit, float pulsestrength
             if (cb == sb)
                 continue;
             const float weight = distancetable[sb - cb + 12];
-            avg += static_cast<float>(1 - bit[cb]) * weight;
+            avg += (1.f - bit[cb]) * weight;
             n += weight;
         }
 
@@ -223,7 +223,7 @@ short calculatePulldown(float distancetable[], float topbit, float pulsestrength
 
     for (unsigned int i = 0; i < 12; i++)
     {
-        const float bitValue = bit[i] != 0 ? 1.f - pulldown[i] : 0.f;
+        const float bitValue = bit[i] > 0.f ? 1.f - pulldown[i] : 0.f;
         if (bitValue > threshold)
         {
             value |= 1u << i;

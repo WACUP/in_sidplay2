@@ -20,10 +20,6 @@
 #ifndef SIDDEFS_FP_H
 #define SIDDEFS_FP_H
 
-#ifndef M_PI
-#  define M_PI    3.14159265358979323846
-#endif
-
 // Branch prediction macros, lifted off the Linux kernel.
 #if RESID_BRANCH_HINTS && HAVE_BUILTIN_EXPECT
 #  define likely(x)      __builtin_expect(!!(x), 1)
