@@ -1,5 +1,5 @@
-#define PLUGIN_VERSION L"2.11.0.14"
-#define PLUGIN_LIBRARY_BUILD_DATE L"2.11.0 -3 November 2024"
+#define PLUGIN_VERSION L"2.12.0.14"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.12.0 - 1 December 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -1104,7 +1104,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		I2WStr(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen);
 		return 1;
 	}
-
+	else if (!_stricmp(metadata, "bitdepth")) {
+		// TODO is this correct though as it's been
+		//      hard-coded to be 16-bit it should
+		ret[0] = L'1';
+		ret[1] = L'6';
+		ret[2] = 0;
+	}
 	return retval;
 }
 
