@@ -146,9 +146,7 @@ void ConfigDlgInitDialog(HWND hWnd)
 
 void UpdateConfig(HWND hWnd)
 {
-	int val;
-
-	val = SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_GETCURSEL,0,0);
+	int val = (int)SendDlgItemMessage(hWnd,IDC_FREQUENCY,CB_GETCURSEL,0,0);
 	switch(val)
 	{
 	case 0:
@@ -168,12 +166,12 @@ void UpdateConfig(HWND hWnd)
 	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
 	{
 		//playback channels
-		val = SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_GETCURSEL, 0, 0);
+		val = (int)SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_GETCURSEL, 0, 0);
 		playerConfig->sidConfig.playback = (val == 0) ? SidConfig::MONO : SidConfig::STEREO;
 	}
 
 	//C64 model
-	val = SendDlgItemMessage(hWnd, IDC_C64MODEL, CB_GETCURSEL, 0, 0);
+	val = (int)SendDlgItemMessage(hWnd, IDC_C64MODEL, CB_GETCURSEL, 0, 0);
 	playerConfig->sidConfig.defaultC64Model = (SidConfig::c64_model_t)val;
 	if (IsDlgButtonChecked(hWnd, IDC_FORCE_C64MODEL) == BST_CHECKED)
 	{
@@ -185,7 +183,7 @@ void UpdateConfig(HWND hWnd)
 	}
 
 	//SID model
-	val = SendDlgItemMessage(hWnd,IDC_SIDMODEL,CB_GETCURSEL,0,0);
+	val = (int)SendDlgItemMessage(hWnd,IDC_SIDMODEL,CB_GETCURSEL,0,0);
 	playerConfig->sidConfig.defaultSidModel = (SidConfig::sid_model_t) val;
 	if (IsDlgButtonChecked(hWnd, IDC_FORCE_SID_MODEL) == BST_CHECKED)
 	{
@@ -233,7 +231,7 @@ void UpdateConfig(HWND hWnd)
 	playerConfig->pseudoStereo = (IsDlgButtonChecked(hWnd, IDC_PSEUDOSTEREO) == BST_CHECKED) ? true : false;
 
 	//SID model
-	val = SendDlgItemMessage(hWnd, IDC_SID2MODEL, CB_GETCURSEL, 0, 0);
+	val = (int)SendDlgItemMessage(hWnd, IDC_SID2MODEL, CB_GETCURSEL, 0, 0);
 	playerConfig->sid2Model = (SidConfig::sid_model_t) val;
 }
 

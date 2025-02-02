@@ -7,7 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "afxres.h"
+#include "winres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -32,7 +32,7 @@ END
 
 2 TEXTINCLUDE 
 BEGIN
-    "#include ""afxres.h""\r\n"
+    "#include ""winres.h""\r\n"
     "\0"
 END
 
@@ -238,8 +238,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,12,0,14
- PRODUCTVERSION 2,12,0,14
+ FILEVERSION 2,12,0,15
+ PRODUCTVERSION 2,12,0,15
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -256,12 +256,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP"
             VALUE "FileDescription", "Input Plug-in"
-            VALUE "FileVersion", "2.12.0.14"
+            VALUE "FileVersion", "2.12.0.15"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2024"
+            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2025"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.12.0.14"
+            VALUE "ProductVersion", "2.12.0.15"
         END
     END
     BLOCK "VarFileInfo"

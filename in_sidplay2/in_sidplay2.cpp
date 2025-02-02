@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.12.0.14"
+#define PLUGIN_VERSION L"2.12.0.15"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.12.0 - 1 December 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -41,6 +41,9 @@ SETUP_API_LNG_VARS;
 static prefsDlgRecW* preferences;
 
 In_Module plugin;
+std::string g_strFilename;
+SidTune* g_tune_info = NULL;
+const SidTuneInfo* g_tuneInfo = NULL;
 CRITICAL_SECTION g_sidPlayer_cs = { 0 };
 CThreadSidPlayer *sidPlayer = NULL;
 //HANDLE gUpdaterThreadHandle = 0;
@@ -75,21 +78,24 @@ void about(HWND hwndParent)
 
 void createsidplayer(void)
 {
-	EnterCriticalSection(&g_sidPlayer_cs);
-
-	if (sidPlayer == NULL)
+	if (plugin.hMainWindow != NULL)
 	{
-		sidPlayer = new CThreadSidPlayer(plugin);
+		EnterCriticalSection(&g_sidPlayer_cs);
 
-		if (sidPlayer != NULL)
+		if (sidPlayer == NULL)
 		{
-			sidPlayer->Init();
+			sidPlayer = new CThreadSidPlayer(plugin);
 
-			//gMutex = CreateMutex(NULL, FALSE, NULL);
+			if (sidPlayer != NULL)
+			{
+				sidPlayer->Init();
+
+				//gMutex = CreateMutex(NULL, FALSE, NULL);
+			}
 		}
-	}
 
-	LeaveCriticalSection(&g_sidPlayer_cs);
+		LeaveCriticalSection(&g_sidPlayer_cs);
+	}
 }
 
 int init(void)
@@ -851,19 +857,16 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	// reset then we can just abort processing further to not
 	// then have any unexpected issues with loading when it's
 	// not needed especially if no sid files are ever in use.
-	if (!filename || !*filename || !_stricmp(metadata, "reset"))
+	if (!filename || !*filename)
 	{
 		return 0;
 	}
 
 	createsidplayer();
 
-	const SidTuneInfo* tuneInfo = NULL;
-	std::string str;
+	const bool reset = !_stricmp(metadata, "reset");
 	std::string strFilename;
-	int length;
-	SidTune tune(0);
-	int subsongIndex = 1;
+	int length = -1, subsongIndex = 1;
 	//bool firstSong = true;
 
 	/*if (gMutex != NULL)
@@ -876,7 +879,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		CloseHandle(gUpdaterThreadHandle);
 		gUpdaterThreadHandle = 0;
 	}*/
-
+#if 0
 	if (!filename || !filename[0])
 	{
 		//get current song info
@@ -903,6 +906,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		subsongIndex = sidPlayer->CurrentSubtune();
 	}
 	else
+#endif
 	{
 		subsongIndex = 1;
 
@@ -915,13 +919,38 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			//firstSong = false;
 			//assume char '{' will never occur in name unless its our subsong sign
 			const size_t i = strFilename.find('}');
-			str = strFilename.substr(1,i -1);
+			const std::string str = strFilename.substr(1,i -1);
 			subsongIndex = AStr2I(str.c_str());
 			strFilename = strFilename.substr(i+1);
+
+			if (strFilename != g_strFilename)
+			{
+				g_strFilename = strFilename;
+
+				if (g_tune_info != NULL)
+				{
+					delete g_tune_info;
+					g_tune_info = NULL;
+				}
+			}
+
+			if (reset)
+			{
+				return 0;
+			}
+
 			//get info from other file if we got real name
-			tune.load(strFilename.c_str());
-			tuneInfo = tune.getInfo();
-			if (tuneInfo == NULL)
+			if ((g_tune_info == NULL) && (sidPlayer != NULL))
+			{
+				g_tune_info = new SidTune(strFilename.c_str());
+			}
+			//tune.load(strFilename.c_str());
+			if (g_tune_info != NULL)
+			{
+				g_tuneInfo = g_tune_info->getInfo();
+			}
+
+			if (g_tuneInfo == NULL)
 			{
 				//ReleaseMutex(gMutex);
 				return 0;
@@ -929,20 +958,45 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		}
 		else
 		{
-			tune.load(strFilename.c_str());
-			tuneInfo = tune.getInfo();
-			if (tuneInfo == NULL)
+			if (strFilename != g_strFilename)
+			{
+				g_strFilename = strFilename;
+
+				if (g_tune_info != NULL)
+				{
+					delete g_tune_info;
+					g_tune_info = NULL;
+				}
+			}
+
+			if (reset)
+			{
+				return 0;
+			}
+
+			if ((g_tune_info == NULL) && (sidPlayer != NULL))
+			{
+				g_tune_info = new SidTune(strFilename.c_str());
+			}
+			//tune.load(strFilename.c_str());
+
+			if (g_tune_info != NULL)
+			{
+				g_tuneInfo = g_tune_info->getInfo();
+			}
+
+			if (g_tuneInfo == NULL)
 			{
 				//ReleaseMutex(gMutex);
 				return 0;
 			}
 
-			subsongIndex = tuneInfo->startSong();
+			subsongIndex = g_tuneInfo->startSong();
 		}
 
 		//tune.selectSong(info.startSong);
-		tune.selectSong(subsongIndex);
-		length = sidPlayer->GetSongLengthMs(tune);
+		g_tune_info->selectSong(subsongIndex);
+		length = sidPlayer->GetSongLengthMs(*g_tune_info);
 		if (length < 0)
 		{
 			//ReleaseMutex(gMutex);
@@ -952,7 +1006,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	
 	//check if we got correct tune info
 	//if (info.c64dataLen == 0) return;
-	if (!tuneInfo || tuneInfo->c64dataLen() == 0)
+	if (!g_tuneInfo || !g_tuneInfo->c64dataLen())
 	{
 		//ReleaseMutex(gMutex);
 		return 0;
@@ -981,7 +1035,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", tuneInfo->infoString(0));
+		StringCchPrintf(ret, retlen, L"%S", g_tuneInfo->infoString(0));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "artist"))
@@ -996,7 +1050,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", tuneInfo->infoString(1));
+		StringCchPrintf(ret, retlen, L"%S", g_tuneInfo->infoString(1));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "album"))
@@ -1023,7 +1077,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", tuneInfo->commentString(0));
+		StringCchPrintf(ret, retlen, L"%S", g_tuneInfo->commentString(0));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "publisher"))
@@ -1040,7 +1094,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		// same string is used for both so we skip the
 		// first part to get to the publisher details
-		char *pub_str = (char *)tuneInfo->infoString(2);
+		const char *pub_str = g_tuneInfo->infoString(2);
 		if (pub_str && *pub_str)
 		{
 			while (pub_str && *pub_str != ' ')
@@ -1064,7 +1118,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	{
 		// same string is used for both so we ignore
 		// most of it & just attempt to get a number
-		char *year_str = (char *)tuneInfo->infoString(2);
+		const char *year_str = g_tuneInfo->infoString(2);
 		if (year_str && *year_str)
 		{
 			// copy up to the space into the buffer
@@ -1081,7 +1135,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	}
 	else if (!_stricmp(metadata, "track"))
 	{
-		if (tuneInfo->songs() > 1)
+		if (g_tuneInfo->songs() > 1)
 		{
 			I2WStr(subsongIndex, ret, retlen);
 		}

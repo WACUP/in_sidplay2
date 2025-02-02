@@ -585,7 +585,7 @@ void CThreadSidDecoder::DoSeek()
 	}
 	else
 	{
-		timesek = (m_seekNeedMs - m_playTimems) / 1000;
+		timesek = (int)(m_seekNeedMs - m_playTimems) / 1000;
 		if (timesek <= 0) return;
 	}
 

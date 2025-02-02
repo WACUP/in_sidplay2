@@ -222,7 +222,7 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 			decodedLen = 2 * playerObj->m_engine->play(reinterpret_cast<short*>(playerObj->m_decodeBuf),desiredLen / 2);
 			//playerObj->m_decodedSampleCount += decodedLen / numChn / (bps>>3);
 			//write it to vis subsystem
-			playerObj->m_inmod->SAAddPCMData(playerObj->m_decodeBuf,numChn,bps,playerObj->m_playTimems);
+			playerObj->m_inmod->SAAddPCMData(playerObj->m_decodeBuf,numChn,bps,(int)playerObj->m_playTimems);
 			/*playerObj->m_inmod->VSAAddPCMData(playerObj->m_decodeBuf,numChn,bps,playerObj->m_playTimems);*/
 
 			playerObj->m_decodedSampleCount += decodedLen / numChn / (bps>>3);
@@ -247,7 +247,7 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 
 		//int timeElapsed = playerObj->GetPlayTime();
 		//int timeElapsed = playerObj->m_inmod->outMod->GetOutputTime();
-		int timeElapsed = playerObj->m_playTimems;
+		const int timeElapsed = (const int)playerObj->m_playTimems;
 		//if we konw the song length and timer just reached it then go to next song
 		
 		const int length = playerObj->GetSongLengthMs();
@@ -325,7 +325,7 @@ const SidTuneInfo* CThreadSidPlayer::GetTuneInfo(void)
 
 int CThreadSidPlayer::GetPlayTime(void)
 {
-	return (m_inmod->outMod ? m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()) : 0);
+	return (int)(m_inmod->outMod ? m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()) : 0);
 	//return ((m_timer->time()*1000)/m_timer->timebase()) + (m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()); 
 }
 
@@ -852,7 +852,7 @@ void CThreadSidPlayer::DoSeek()
 	}
 	else
 	{
-		timesek = (m_seekNeedMs - m_playTimems) / 1000;
+		timesek = (int)((m_seekNeedMs - m_playTimems) / 1000);
 		if (timesek <= 0) return;
 	}
 
