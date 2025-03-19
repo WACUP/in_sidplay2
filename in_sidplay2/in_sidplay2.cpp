@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.12.0.15"
+#define PLUGIN_VERSION L"2.12.0.16"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.12.0 - 1 December 2024"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -44,10 +44,9 @@ In_Module plugin;
 std::string g_strFilename;
 SidTune* g_tune_info = NULL;
 const SidTuneInfo* g_tuneInfo = NULL;
-CRITICAL_SECTION g_sidPlayer_cs = { 0 };
+CRITICAL_SECTION g_sidPlayer_cs = { 0 }, g_info_cs = { 0 };
 CThreadSidPlayer *sidPlayer = NULL;
 //HANDLE gUpdaterThreadHandle = 0;
-//HANDLE gMutex = 0;
 
 void GetFileExtensions(void);
 DWORD WINAPI AddSubsongsThreadProc(void* params);
@@ -89,8 +88,6 @@ void createsidplayer(void)
 			if (sidPlayer != NULL)
 			{
 				sidPlayer->Init();
-
-				//gMutex = CreateMutex(NULL, FALSE, NULL);
 			}
 		}
 
@@ -126,17 +123,12 @@ int init(void)
 	}
 
 	InitializeCriticalSectionEx(&g_sidPlayer_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
+	InitializeCriticalSectionEx(&g_info_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
 	return IN_INIT_SUCCESS;
 }
 
 void quit(void) {
 	/* one-time deinit, such as memory freeing */ 
-	/*if (gMutex != NULL)
-	{
-		CloseHandle(gMutex);
-		gMutex = NULL;
-	}*/
-
 	/*if (gUpdaterThreadHandle != NULL)
 	{
 		CloseHandle(gUpdaterThreadHandle);
@@ -148,13 +140,22 @@ void quit(void) {
 	if (sidPlayer != NULL)
 	{
 		sidPlayer->Stop();
-		delete sidPlayer;
+		// TODO this is relatively slow
+		//		to be processed at ~8ms
+		__try
+		{
+			delete sidPlayer;
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+		}
 		sidPlayer = NULL;
 	}
 
 	LeaveCriticalSection(&g_sidPlayer_cs);
 
 	DeleteCriticalSection(&g_sidPlayer_cs);
+	DeleteCriticalSection(&g_info_cs);
 }
 
 /*int isourfile(const in_char *fn) { 
@@ -378,11 +379,6 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 {
 	createsidplayer();
 
-	/*if (gMutex != NULL)
-	{
-		WaitForSingleObject(gMutex, INFINITE);
-	}*/
-
 	SidTune tune(0);
 	LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
 	tune.load(fn);
@@ -391,13 +387,10 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 	const SidTuneInfo* tuneInfo = tune.getInfo();
 	if (tuneInfo == NULL)
 	{
-		//ReleaseMutex(gMutex);
 		return 0;
 	}
 
-	const int ret = tuneInfo->songs();
-	//ReleaseMutex(gMutex);
-	return ret;
+	return tuneInfo->songs();
 }
 
 // this is an odd function. it is used to get the title and/or
@@ -423,11 +416,6 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 
 	createsidplayer();
 
-	/*if (gMutex != NULL)
-	{
-		WaitForSingleObject(gMutex, INFINITE);
-	}*/
-
 	/*if (gUpdaterThreadHandle != 0)
 	{
 		CloseHandle(gUpdaterThreadHandle);
@@ -443,14 +431,12 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		}
 		if (tuneInfo == NULL)
 		{
-			//ReleaseMutex(gMutex);
 			return;
 		}
 
 		length = sidPlayer->GetSongLengthMs();
 		if (length < 0)
 		{
-			//ReleaseMutex(gMutex);
 			return;
 		}
 
@@ -480,7 +466,6 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 			tuneInfo = tune.getInfo();
 			if (tuneInfo == NULL)
 			{
-				//ReleaseMutex(gMutex);
 				return;
 			}
 		}
@@ -490,7 +475,6 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 			tuneInfo = tune.getInfo();
 			if (tuneInfo == NULL)
 			{
-				//ReleaseMutex(gMutex);
 				return;
 			}
 
@@ -502,7 +486,6 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		length = sidPlayer->GetSongLengthMs(tune);
 		if (length < 0)
 		{
-			//ReleaseMutex(gMutex);
 			return;
 		}
 	}
@@ -511,7 +494,6 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	//if (info.c64dataLen == 0) return;
 	if (tuneInfo->c64dataLen() == 0)
 	{
-		//ReleaseMutex(gMutex);
 		return;
 	}
 
@@ -595,11 +577,10 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		wcsncpy(title, titleTemplateW, GETFILEINFO_TITLE_LENGTH);
 	}
 
-	//if ((info->songs() == 1) || (firstSong == false) || !filename || !filename[0])
+	/*if ((info->songs() == 1) || (firstSong == false) || !filename || !filename[0])
 	{
-		//ReleaseMutex(gMutex);
 		return;
-	}
+	}*/
 
 	//we have subsongs...
 	/*plLength = (int)GetPlaylistLength();
@@ -612,7 +593,6 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		if (SameStr(foundChar+1,filename))
 		{
 			//subtunes were added no point to do it again
-			ReleaseMutex(gMutex);
 			return;
 		}
 	}	
@@ -639,18 +619,12 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	//gUpdaterThreadHandle = CreateThread(NULL, 0, AddSubsongsThreadProc, (void*)threadParams, 0, NULL);
 	AddSubsongsThreadProc((void*)threadParams);
 
-	ReleaseMutex(gMutex);
 	return;*/
 }
 
 #if 0
 DWORD WINAPI AddSubsongsThreadProc(void* params)
 {
-	/*if (gMutex != NULL)
-	{
-		WaitForSingleObject(gMutex, INFINITE);
-	}*/
-
 	tAddSubsongParams* threadParams = reinterpret_cast<tAddSubsongParams*>(params);
 	fileinfo *fi = new fileinfo;
 	if (fi)
@@ -691,7 +665,6 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 	}
 	delete threadParams;
 
-	//ReleaseMutex(gMutex);
 	return 0;
 }
 #endif
@@ -864,15 +837,12 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 	createsidplayer();
 
+	EnterCriticalSection(&g_info_cs);
+
 	const bool reset = !_stricmp(metadata, "reset");
 	std::string strFilename;
 	int length = -1, subsongIndex = 1;
 	//bool firstSong = true;
-
-	/*if (gMutex != NULL)
-	{
-		WaitForSingleObject(gMutex, INFINITE);
-	}*/
 
 	/*if (gUpdaterThreadHandle != 0)
 	{
@@ -889,14 +859,12 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		}
 		if (tuneInfo == NULL)
 		{
-			//ReleaseMutex(gMutex);
 			return 0;
 		}
 
 		length = sidPlayer->GetSongLengthMs();
 		if (length < 0)
 		{
-			//ReleaseMutex(gMutex);
 			return 0;
 		}
 
@@ -936,6 +904,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 			if (reset)
 			{
+				LeaveCriticalSection(&g_info_cs);
 				return 0;
 			}
 
@@ -952,7 +921,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 			if (g_tuneInfo == NULL)
 			{
-				//ReleaseMutex(gMutex);
+				LeaveCriticalSection(&g_info_cs);
 				return 0;
 			}
 		}
@@ -971,6 +940,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 			if (reset)
 			{
+				LeaveCriticalSection(&g_info_cs);
 				return 0;
 			}
 
@@ -987,7 +957,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 			if (g_tuneInfo == NULL)
 			{
-				//ReleaseMutex(gMutex);
+				LeaveCriticalSection(&g_info_cs);
 				return 0;
 			}
 
@@ -997,9 +967,10 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		//tune.selectSong(info.startSong);
 		g_tune_info->selectSong(subsongIndex);
 		length = sidPlayer->GetSongLengthMs(*g_tune_info);
+
 		if (length < 0)
 		{
-			//ReleaseMutex(gMutex);
+			LeaveCriticalSection(&g_info_cs);
 			return 0;
 		}
 	}
@@ -1008,7 +979,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	//if (info.c64dataLen == 0) return;
 	if (!g_tuneInfo || !g_tuneInfo->c64dataLen())
 	{
-		//ReleaseMutex(gMutex);
+		LeaveCriticalSection(&g_info_cs);
 		return 0;
 	}
 
@@ -1031,6 +1002,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->TITLE.empty())
 			{
 				StringCchPrintf(ret, retlen, L"%S", sb->TITLE.c_str());
+				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
@@ -1046,6 +1018,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->ARTIST.empty())
 			{
 				StringCchPrintf(ret, retlen, L"%S", sb->ARTIST.c_str());
+				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
@@ -1061,6 +1034,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->NAME.empty())
 			{
 				StringCchPrintf(ret, retlen, L"%S", sb->NAME.c_str());
+				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
@@ -1073,6 +1047,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->COMMENT.empty())
 			{
 				StringCchPrintf(ret, retlen, L"%S", sb->COMMENT.c_str());
+				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
@@ -1088,6 +1063,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->AUTHOR.empty())
 			{
 				StringCchPrintf(ret, retlen, L"%S", sb->AUTHOR.c_str());
+				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
@@ -1148,15 +1124,15 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	else if (!_stricmp(metadata, "samplerate"))
 	{
 		I2WStr(sidPlayer->GetCurrentConfig().sidConfig.frequency, ret, retlen);
-		return 1;
+		retval = 1;
 	}
 	else if (!_stricmp(metadata, "bitrate"))
 	{
-		const auto config = sidPlayer->GetCurrentConfig();
+		const auto& config = sidPlayer->GetCurrentConfig();
 		const int numChann = (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
 							  (config.sidConfig.playback == SidConfig::STEREO) ? 2 : 1 : 1);
 		I2WStr(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen);
-		return 1;
+		retval = 1;
 	}
 	else if (!_stricmp(metadata, "bitdepth")) {
 		// TODO is this correct though as it's been
@@ -1164,7 +1140,10 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		ret[0] = L'1';
 		ret[1] = L'6';
 		ret[2] = 0;
+		retval = 1;
 	}
+
+	LeaveCriticalSection(&g_info_cs);
 	return retval;
 }
 
