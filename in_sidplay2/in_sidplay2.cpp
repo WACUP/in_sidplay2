@@ -1,5 +1,5 @@
-#define PLUGIN_VERSION L"2.12.0.16"
-#define PLUGIN_LIBRARY_BUILD_DATE L"2.12.0 - 1 December 2024"
+#define PLUGIN_VERSION L"2.13.1.17"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.13.1 - 25 April 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -46,6 +46,7 @@ SidTune* g_tune_info = NULL;
 const SidTuneInfo* g_tuneInfo = NULL;
 CRITICAL_SECTION g_sidPlayer_cs = { 0 }, g_info_cs = { 0 };
 CThreadSidPlayer *sidPlayer = NULL;
+bool closing = false;
 //HANDLE gUpdaterThreadHandle = 0;
 
 void GetFileExtensions(void);
@@ -69,15 +70,15 @@ void config(HWND hwndParent)
 void about(HWND hwndParent)
 {
 	wchar_t message[1024] = { 0 }, title[256] = { 0 };
-	StringCchPrintf(message, ARRAYSIZE(message), WASABI_API_LNGSTRINGW(IDS_ABOUT_STRING),
-					WASABI_API_LNGSTRINGW_BUF(IDS_PLUGIN_NAME, title, ARRAYSIZE(title)),
-							 PLUGIN_VERSION, TEXT(__DATE__), PLUGIN_LIBRARY_BUILD_DATE);
+	PrintfCch(message, ARRAYSIZE(message), LangString(IDS_ABOUT_STRING),
+			  LngStringCopy(IDS_PLUGIN_NAME, title, ARRAYSIZE(title)),
+			  PLUGIN_VERSION, TEXT(__DATE__), PLUGIN_LIBRARY_BUILD_DATE);
 	AboutMessageBox(hwndParent, message, title);
 }
 
 void createsidplayer(void)
 {
-	if (plugin.hMainWindow != NULL)
+	if (!closing && (plugin.hMainWindow != NULL))
 	{
 		EnterCriticalSection(&g_sidPlayer_cs);
 
@@ -96,25 +97,22 @@ void createsidplayer(void)
 }
 
 int init(void)
-{ 
-	WASABI_API_LNG = plugin.language;
-
+{
 	// need to have this initialised before we try to do anything with localisation features
-	WASABI_API_START_LANG(plugin.hDllInstance, InSidiousLangGUID);
+	StartPluginLangOnly(plugin.hDllInstance, InSidiousLangGUID);
 
 	// TODO localise
 	plugin.description = (char*)(TEXT("SID Player v") PLUGIN_VERSION);
 
-	/*WASABI_API_START_LANG_DESC(plugin.language, plugin.hDllInstance,
-							InSidiousLangGUID, IDS_PLUGIN_NAME,
-							PLUGIN_VERSION, &plugin.description);*/
+	/*StartPluginLangWithDesc(plugin.hDllInstance, InSidiousLangGUID,
+			 IDS_PLUGIN_NAME, PLUGIN_VERSION, &plugin.description);*/
 
 	preferences = (prefsDlgRecW*)GlobalAlloc(GPTR, sizeof(prefsDlgRecW));
 	if (preferences)
 	{
 		preferences->hInst = plugin.hDllInstance;
 		preferences->dlgID = IDD_CONFIG_DLG;
-		preferences->name = WASABI_API_LNGSTRINGW_DUP(IDS_SID);
+		preferences->name = LngStringDup(IDS_SID);
 		preferences->proc = ConfigDlgWndProc;
 		preferences->where = 10;
 		preferences->_id = 98;
@@ -135,6 +133,8 @@ void quit(void) {
 		gUpdaterThreadHandle = NULL;
 	}*/
 
+	closing = true;
+
 	EnterCriticalSection(&g_sidPlayer_cs);
 
 	if (sidPlayer != NULL)
@@ -154,8 +154,8 @@ void quit(void) {
 
 	LeaveCriticalSection(&g_sidPlayer_cs);
 
-	DeleteCriticalSection(&g_sidPlayer_cs);
-	DeleteCriticalSection(&g_info_cs);
+	/*DeleteCriticalSection(&g_sidPlayer_cs);
+	DeleteCriticalSection(&g_info_cs);*/
 }
 
 /*int isourfile(const in_char *fn) { 
@@ -176,7 +176,7 @@ int play(const in_char *filename)
 
 	LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
 	strFilename = fn;
-	AutoCharDupFree((void*)fn);
+	SafeFree((void*)fn);
 
 	const size_t i = strFilename.find('}');
 	if(i > 0) 
@@ -299,7 +299,7 @@ void conditionsReplace(std::string& formatString, const StilBlock* stilBlock, co
 			break;
 		}
 		conditionToken = formatString.substr(tokenBeginPos + 2, tokenEndPos - tokenBeginPos - 2);
-		StringCchPrintfA(toReplaceToken, 30, "%%{%s}", conditionToken.c_str());
+		PrintfCchA(toReplaceToken, 30, "%%{%s}", conditionToken.c_str());
 
 		if (!conditionToken.empty())
 		{
@@ -382,7 +382,7 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 	SidTune tune(0);
 	LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
 	tune.load(fn);
-	AutoCharDupFree((void*)fn);
+	SafeFree((void*)fn);
 
 	const SidTuneInfo* tuneInfo = tune.getInfo();
 	if (tuneInfo == NULL)
@@ -451,7 +451,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 
 		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
 		strFilename = fn;
-		AutoCharDupFree((void*)fn);
+		SafeFree((void*)fn);
 
 		if(strFilename[0] == '{') 
 		{
@@ -546,7 +546,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	if (tuneInfo->songs() > 1)
 	{
 		char buf[20] = {0};
-		StringCchPrintfA(buf,20,"%02d", subsongIndex);
+		PrintfCchA(buf,20,"%02d", subsongIndex);
 		replaceAll(subsongTemplate, "%n", buf);
 		replaceAll(titleTemplate, "%x", subsongTemplate.c_str());
 	}
@@ -573,7 +573,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 
 	if (title != NULL)
 	{
-		AutoWide titleTemplateW(titleTemplate.c_str());
+		const AutoWide titleTemplateW(titleTemplate.c_str());
 		wcsncpy(title, titleTemplateW, GETFILEINFO_TITLE_LENGTH);
 	}
 
@@ -646,7 +646,7 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 				}
 
 				++foundindex;
-				StringCchPrintfA(buf, ARRAYSIZE(buf), "{%d}", i);
+				PrintfCchA(buf, ARRAYSIZE(buf), "{%d}", i);
 				strFilename.assign(buf);
 				strFilename.append(threadParams->fileName);
 				ZeroMemory(fi, sizeof(fileinfo));
@@ -719,13 +719,9 @@ extern In_Module plugin =
 
 void GetFileExtensions(void)
 {
-	static bool loaded_extensions;
-	if (!loaded_extensions)
+	if (!plugin.FileExtensions)
 	{
-		loaded_extensions = true;
-
-		// TODO localise
-		plugin.FileExtensions = (char*)L"SID\0Commodore 64 SID Music File (*.SID)\0";
+		plugin.FileExtensions = BuildInputFileListString(L"SID", L"Commodore 64 SID Music File (*.SID)");
 	}
 }
 
@@ -738,7 +734,7 @@ extern "C" __declspec(dllexport) int winampUninstallPlugin(HINSTANCE hDllInst, H
 {
 	// TODO
 	// prompt to remove our settings with default as no (just incase)
-	/*if (plugin.language->UninstallSettingsPrompt(reinterpret_cast<const wchar_t*>(plugin.description)))
+	/*if (UninstallSettingsPrompt(reinterpret_cast<const wchar_t*>(plugin.description)))
 	{
 		SaveNativeIniString(PLUGIN_INI, CONFIG_APP_NAME, 0, 0);
 	}*/
@@ -773,7 +769,7 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 
 		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
 		strfilename = fn;
-		AutoCharDupFree((void*)fn);
+		SafeFree((void*)fn);
 
 		const size_t i = strfilename.find('}');
 		if (i > 0) 
@@ -788,7 +784,7 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 
 			// TODO localise
 			wcsncpy(name, L"STIL Information", namelen);
-			return WASABI_API_CREATEDIALOGPARAMW(IDD_INFO, parent, InfoDlgWndProc, (LPARAM)info);
+			return LangCreateDialog(IDD_INFO, parent, InfoDlgWndProc, (LPARAM)info);
 		}
 	}
 	return NULL;
@@ -821,7 +817,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			return 0;
 		}
-
+		// TODO localise
 		wcsncpy(ret, L"Commodore 64 Music File", retlen);
 		return 1;
 	}
@@ -880,7 +876,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
 		strFilename = fn;
-		AutoCharDupFree((void*)fn);
+		SafeFree((void*)fn);
 
 		if (strFilename[0] == '{') 
 		{
@@ -1001,13 +997,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->TITLE.empty())
 			{
-				StringCchPrintf(ret, retlen, L"%S", sb->TITLE.c_str());
+				PrintfCch(ret, retlen, L"%S", sb->TITLE.c_str());
 				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", g_tuneInfo->infoString(0));
+		PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(0));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "artist"))
@@ -1017,13 +1013,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->ARTIST.empty())
 			{
-				StringCchPrintf(ret, retlen, L"%S", sb->ARTIST.c_str());
+				PrintfCch(ret, retlen, L"%S", sb->ARTIST.c_str());
 				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", g_tuneInfo->infoString(1));
+		PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(1));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "album"))
@@ -1033,7 +1029,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->NAME.empty())
 			{
-				StringCchPrintf(ret, retlen, L"%S", sb->NAME.c_str());
+				PrintfCch(ret, retlen, L"%S", sb->NAME.c_str());
 				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
@@ -1046,13 +1042,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->COMMENT.empty())
 			{
-				StringCchPrintf(ret, retlen, L"%S", sb->COMMENT.c_str());
+				PrintfCch(ret, retlen, L"%S", sb->COMMENT.c_str());
 				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
 		}
 
-		StringCchPrintf(ret, retlen, L"%S", g_tuneInfo->commentString(0));
+		PrintfCch(ret, retlen, L"%S", g_tuneInfo->commentString(0));
 		retval = 1;
 	}
 	else if (!_stricmp(metadata, "publisher"))
@@ -1062,7 +1058,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->AUTHOR.empty())
 			{
-				StringCchPrintf(ret, retlen, L"%S", sb->AUTHOR.c_str());
+				PrintfCch(ret, retlen, L"%S", sb->AUTHOR.c_str());
 				LeaveCriticalSection(&g_info_cs);
 				return 1;
 			}
@@ -1085,7 +1081,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 					++pub_str;
 				}
 
-				StringCchPrintf(ret, retlen, L"%S", pub_str);
+				PrintfCch(ret, retlen, L"%S", pub_str);
 				retval = 1;
 			}
 		}

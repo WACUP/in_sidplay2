@@ -181,11 +181,9 @@ void SidTuneBase::placeSidTuneInC64mem(sidmemory& mem)
     mem.fillRam(info->m_loadAddr, &cache[fileOffset], info->m_c64dataLen);
 }
 
+#ifndef _MSC_VER
 bool SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
 {
-    // TODO can this be improved for windows specificness
-    //      to reduce the time it takes to get & load the
-    //      file contents especially for ml_ll vs hvsc..?
     std::ifstream inFile(fileName, std::ifstream::binary);
 
     if (!inFile.is_open())
@@ -228,6 +226,7 @@ bool SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
     bufferRef.swap(fileBuf);
     return true;
 }
+#endif
 
 SidTuneBase::SidTuneBase() :
     info(new SidTuneInfoImpl()),
@@ -275,7 +274,7 @@ SidTuneBase* SidTuneBase::getFromBuffer(const uint_least8_t* const buffer, uint_
     buffer_t buf1(buffer, buffer + bufferLen);
 
     // Here test for the possible single file formats.
-    std::unique_ptr<SidTuneBase> s(PSID::load(buf1));
+    std::unique_ptr<SidTuneBase> s(_PSID::load(buf1));
     if (s.get() == nullptr) s.reset(MUS::load(buf1, true));
     if (s.get() == nullptr) throw loadError(ERR_UNRECOGNIZED_FORMAT);
 
@@ -387,7 +386,7 @@ SidTuneBase* SidTuneBase::getFromFiles(LoaderFunc loader, const char* fileName, 
     }
 
     // File loaded. Now check if it is in a valid single-file-format.
-    std::unique_ptr<SidTuneBase> s(PSID::load(fileBuf1));
+    std::unique_ptr<SidTuneBase> s(_PSID::load(fileBuf1));
     if (s.get() == nullptr)
     {
         // Try some native C64 file formats
@@ -609,5 +608,35 @@ std::string SidTuneBase::petsciiToAscii(SmartPtr_sidtt<const uint8_t>& spPet)
 
     return buffer;
 }
+
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+bool SidTuneBase::loadFile(const char* fileName, buffer_t& bufferRef)
+{
+    // for windows setups this has better performance compared to the
+    // original code which is important when processing the HVSC set!
+    HANDLE hFile = INVALID_HANDLE_VALUE;
+    DWORD size = INVALID_FILE_SIZE;
+    bool ret = false;
+	if ((hFile = CreateFileA(fileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                             OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN,
+                             NULL)) != INVALID_HANDLE_VALUE)
+	{
+		const DWORD size = GetFileSize(hFile, NULL);
+        if (size && (size != INVALID_FILE_SIZE))
+        {
+            bufferRef.resize(size);
+            DWORD read = 0;
+            if (ReadFile(hFile, &bufferRef[0], size, &read, NULL) && (read == size))
+            {
+                ret = true;
+            }
+        }
+		CloseHandle(hFile);
+	}
+    return ret;
+}
+#endif
 
 }

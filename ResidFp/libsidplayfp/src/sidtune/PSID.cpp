@@ -143,7 +143,7 @@ bool validateAddress(uint_least8_t address)
     return true;
 }
 
-SidTuneBase* PSID::load(buffer_t& dataBuf)
+SidTuneBase* _PSID::load(buffer_t& dataBuf)
 {
     // File format check
     if (dataBuf.size() < 4)
@@ -161,13 +161,13 @@ SidTuneBase* PSID::load(buffer_t& dataBuf)
     psidHeader pHeader;
     readHeader(dataBuf, pHeader);
 
-    std::unique_ptr<PSID> tune(new PSID());
+    std::unique_ptr<_PSID> tune(new _PSID());
     tune->tryLoad(pHeader);
 
     return tune.release();
 }
 
-void PSID::readHeader(const buffer_t &dataBuf, psidHeader &hdr)
+void _PSID::readHeader(const buffer_t &dataBuf, psidHeader &hdr)
 {
     // Due to security concerns, input must be at least as long as version 1
     // header plus 16-bit C64 load address. That is the area which will be
@@ -208,7 +208,7 @@ void PSID::readHeader(const buffer_t &dataBuf, psidHeader &hdr)
     }
 }
 
-void PSID::tryLoad(const psidHeader &pHeader)
+void _PSID::tryLoad(const psidHeader &pHeader)
 {
     SidTuneInfo::compatibility_t compatibility = SidTuneInfo::COMPATIBILITY_C64;
 
@@ -359,7 +359,7 @@ void PSID::tryLoad(const psidHeader &pHeader)
         throw loadError("Compute!'s Sidplayer MUS data is not supported yet"); // TODO
 }
 
-/*const char *PSID::createMD5(char *md5)
+/*const char *_PSID::createMD5(char *md5)
 {
     if (md5 == nullptr)
         md5 = m_md5;

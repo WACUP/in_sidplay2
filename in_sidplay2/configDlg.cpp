@@ -257,7 +257,7 @@ void SelectHvscFile(HWND hWnd)
 		if (playerConfig->songLengthsFile != NULL)
 		{
 			/*delete[] playerConfig->songLengthsFile;/*/
-			AutoCharDupFree(playerConfig->songLengthsFile);/**/
+			SafeFree(playerConfig->songLengthsFile);/**/
 		}
 
 		/*playerConfig->songLengthsFile = new char[pathLen];
@@ -299,7 +299,7 @@ void SelectHvscDirectory(HWND hWnd)
 		if (playerConfig->hvscDirectory != NULL)
 		{
 			/*delete[] playerConfig->hvscDirectory;/*/
-			AutoCharDupFree(playerConfig->hvscDirectory);/**/
+			SafeFree(playerConfig->hvscDirectory);/**/
 		}
 
 		/*playerConfig->hvscDirectory = new char[pathLen];

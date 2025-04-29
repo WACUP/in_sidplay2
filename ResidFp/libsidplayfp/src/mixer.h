@@ -92,7 +92,6 @@ public:
 
 private:
     std::vector<sidemu*> m_chips;
-    std::vector<short*> m_buffers;
 
     std::vector<int_least32_t> m_iSamples;
     std::vector<int_least32_t> m_volume;
@@ -168,20 +167,20 @@ private:
 
     int_least32_t stereo_ch1_TwoChips() const
     {
-        return (m_iSamples[0] + 0.5*m_iSamples[1]) * SCALE[1] / SCALE_FACTOR;
+        return (int)(m_iSamples[0] + 0.5*m_iSamples[1]) * SCALE[1] / SCALE_FACTOR;
     }
     int_least32_t stereo_ch2_TwoChips() const
     {
-        return (0.5*m_iSamples[0] + m_iSamples[1]) * SCALE[1] / SCALE_FACTOR;
+        return (int)(0.5*m_iSamples[0] + m_iSamples[1]) * SCALE[1] / SCALE_FACTOR;
     }
 
     int_least32_t stereo_ch1_ThreeChips() const
     {
-        return (m_iSamples[0] + m_iSamples[1] + 0.5*m_iSamples[2]) * SCALE[2] / SCALE_FACTOR;
+        return (int)(m_iSamples[0] + m_iSamples[1] + 0.5*m_iSamples[2]) * SCALE[2] / SCALE_FACTOR;
     }
     int_least32_t stereo_ch2_ThreeChips() const
     {
-        return (0.5*m_iSamples[0] + m_iSamples[1] + m_iSamples[2]) * SCALE[2] / SCALE_FACTOR;
+        return (int)(0.5*m_iSamples[0] + m_iSamples[1] + m_iSamples[2]) * SCALE[2] / SCALE_FACTOR;
     }
 
 public:

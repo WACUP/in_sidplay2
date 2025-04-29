@@ -34,7 +34,7 @@ namespace libsidplayfp
 
 struct psidHeader;
 
-class PSID final : public SidTuneBase
+class _PSID final : public SidTuneBase
 {
 private:
     char m_md5[SidTune::MD5_LENGTH+1];
@@ -55,10 +55,10 @@ private:
     static void readHeader(const buffer_t &dataBuf, psidHeader &hdr);
 
 protected:
-    PSID() {}
+    _PSID() {}
 
 public:
-    ~PSID() override = default;
+    ~_PSID() override = default;
 
     /**
      * @return pointer to a SidTune or 0 if not a PSID file
@@ -72,8 +72,8 @@ public:
 
 private:
     // prevent copying
-    PSID(const PSID&) = delete;
-    PSID& operator=(PSID&) = delete;
+    _PSID(const _PSID&) = delete;
+    _PSID& operator=(_PSID&) = delete;
 };
 
 }
