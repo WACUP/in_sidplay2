@@ -292,7 +292,7 @@ void SelectHvscDirectory(HWND hWnd)
 	if (pidl)
 	{
 		// get the name of the folder and put it in path
-		wchar_t path[MAX_PATH] = { 0 };
+		wchar_t path[MAX_PATH]/* = { 0 }*/;
 		PathFromPIDL(pidl, path, ARRAYSIZE(path), true);
 		//const size_t pathLen = wcslen(path) + 1;
 
