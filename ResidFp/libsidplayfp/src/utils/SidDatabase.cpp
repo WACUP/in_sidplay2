@@ -36,6 +36,7 @@
 #define _PRSHT_H_
 #define _INC_COMMCTRL
 #define _INC_COMMDLG
+#define SKIP_SUBCLASS
 #include <../../../../loader/loader/utils.h>
 
 const char ERR_DATABASE_CORRUPT[]        = "SID DATABASE ERROR: Database seems to be corrupt.";
