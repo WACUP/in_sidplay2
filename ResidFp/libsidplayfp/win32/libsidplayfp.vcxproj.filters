@@ -326,6 +326,7 @@
     <ClInclude Include="..\src\builders\residfp-builder\residfp\FilterModelConfig.h">
       <Filter>resid-fp-builder\residfp</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\simpleMixer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\sidplayfp\sidbuilder.cpp">

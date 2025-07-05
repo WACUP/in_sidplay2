@@ -219,6 +219,7 @@
     <ClInclude Include="..\src\sidtune\SidTuneInfoImpl.h" />
     <ClInclude Include="..\src\sidtune\SidTuneTools.h" />
     <ClInclude Include="..\src\sidtune\SmartPtr.h" />
+    <ClInclude Include="..\src\simpleMixer.h" />
     <ClInclude Include="..\src\stringutils.h" />
     <ClInclude Include="..\src\utils\iMd5.h" />
     <ClInclude Include="..\src\utils\iniParser.h" />
