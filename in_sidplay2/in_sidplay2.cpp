@@ -69,7 +69,7 @@ void config(HWND hwndParent)
 
 void about(HWND hwndParent)
 {
-	wchar_t message[1024] = { 0 }, title[256] = { 0 };
+	wchar_t message[1024]/* = { 0 }*/, title[256]/* = { 0 }*/;
 	PrintfCch(message, ARRAYSIZE(message), LangString(IDS_ABOUT_STRING),
 			  LngStringCopy(IDS_PLUGIN_NAME, title, ARRAYSIZE(title)),
 			  PLUGIN_VERSION, TEXT(__DATE__), PLUGIN_LIBRARY_BUILD_DATE);
@@ -794,24 +794,26 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 {
 	int retval = 0;
 
-	if (!_stricmp(metadata, "type") ||
-		!_stricmp(metadata, "lossless") ||
-		!_stricmp(metadata, "streammetadata"))
+	if (SameStrA(metadata, "type") ||
+		SameStrA(metadata, "lossless") ||
+		SameStrA(metadata, "streammetadata"))
 	{
 		ret[0] = L'0';
 		ret[1] = L'\0';
 		return 1;
 	}
-    else if (!_stricmp(metadata, "streamgenre") ||
-			 !_stricmp(metadata, "streamtype") ||
-             !_stricmp(metadata, "streamurl") ||
-             !_stricmp(metadata, "streamname"))
+    else if (SameStrNA(metadata, "stream", 6) &&
+             (SameStrA((metadata + 6), "type") ||
+              SameStrA((metadata + 6), "genre") ||
+              SameStrA((metadata + 6), "url") ||
+              SameStrA((metadata + 6), "name") ||
+			  SameStrA((metadata + 6), "title")))
     {
         return 0;
     }
-	else if (!_stricmp(metadata, "family") ||
+	else if (SameStrA(metadata, "family") ||
 			 // TODO add more to "formatinformation" ?
-			 !_stricmp(metadata, "formatinformation"))
+			 SameStrA(metadata, "formatinformation"))
 	{
 		if (!filename || !filename[0])
 		{
@@ -835,7 +837,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 	EnterCriticalSection(&g_info_cs);
 
-	const bool reset = !_stricmp(metadata, "reset");
+	const bool reset = SameStrA(metadata, "reset");
 	std::string strFilename;
 	int length = -1, subsongIndex = 1;
 	//bool firstSong = true;
@@ -980,7 +982,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	}
 
 	// even if no file, return a 1 and write "0"
-	if (!_stricmp(metadata, "length"))
+	if (SameStrA(metadata, "length"))
 	{
 		if (length <= 0)
 		{
@@ -990,7 +992,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		I2WStr(length, ret, retlen);
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "title"))
+	else if (SameStrA(metadata, "title"))
 	{
 		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
 		if (sb != NULL)
@@ -1006,7 +1008,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(0));
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "artist"))
+	else if (SameStrA(metadata, "artist"))
 	{
 		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
 		if (sb != NULL)
@@ -1022,7 +1024,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(1));
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "album"))
+	else if (SameStrA(metadata, "album"))
 	{
 		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
 		if (sb != NULL)
@@ -1035,7 +1037,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 	}
-	else if (!_stricmp(metadata, "comment"))
+	else if (SameStrA(metadata, "comment"))
 	{
 		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
 		if (sb != NULL)
@@ -1051,7 +1053,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		PrintfCch(ret, retlen, L"%S", g_tuneInfo->commentString(0));
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "publisher"))
+	else if (SameStrA(metadata, "publisher"))
 	{
 		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
 		if (sb != NULL)
@@ -1086,7 +1088,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			}
 		}
 	}
-	else if (!_stricmp(metadata, "year"))
+	else if (SameStrA(metadata, "year"))
 	{
 		// same string is used for both so we ignore
 		// most of it & just attempt to get a number
@@ -1105,7 +1107,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			retval = 1;
 		}
 	}
-	else if (!_stricmp(metadata, "track"))
+	else if (SameStrA(metadata, "track"))
 	{
 		if (g_tuneInfo->songs() > 1)
 		{
@@ -1117,12 +1119,12 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		}
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "samplerate"))
+	else if (SameStrA(metadata, "samplerate"))
 	{
 		I2WStr(sidPlayer->GetCurrentConfig().sidConfig.frequency, ret, retlen);
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "bitrate"))
+	else if (SameStrA(metadata, "bitrate"))
 	{
 		const auto& config = sidPlayer->GetCurrentConfig();
 		const int numChann = (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
@@ -1130,7 +1132,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		I2WStr(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen);
 		retval = 1;
 	}
-	else if (!_stricmp(metadata, "bitdepth")) {
+	else if (SameStrA(metadata, "bitdepth")) {
 		// TODO is this correct though as it's been
 		//      hard-coded to be 16-bit it should
 		ret[0] = L'1';
