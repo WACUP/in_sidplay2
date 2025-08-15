@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.15.0.17"
+#define PLUGIN_VERSION L"2.15.0.18"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.15.0 - 29 Jun 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -14,7 +14,6 @@
 //#include "subsongdlg.h"
 #include <sdk/winamp/wa_ipc.h>
 #include <sdk/winamp/ipc_pe.h>
-#include <sdk/nu/autowide.h>
 #define SKIP_INT_DEFINES
 #include <sdk/Agave/Language/api_language.h>
 #include <loader/loader/paths.h>
@@ -107,7 +106,7 @@ int init(void)
 	/*StartPluginLangWithDesc(plugin.hDllInstance, InSidiousLangGUID,
 			 IDS_PLUGIN_NAME, PLUGIN_VERSION, &plugin.description);*/
 
-	preferences = (prefsDlgRecW*)GlobalAlloc(GPTR, sizeof(prefsDlgRecW));
+	preferences = (prefsDlgRecW*)SafeMalloc(sizeof(prefsDlgRecW));
 	if (preferences)
 	{
 		preferences->hInst = plugin.hDllInstance;
@@ -164,9 +163,7 @@ void quit(void) {
 
 // called when winamp wants to play a file
 int play(const in_char *filename) 
-{ 
-	std::string strFilename, str;
-
+{
 	createsidplayer();
 	if(sidPlayer == NULL)
 	{
@@ -174,16 +171,16 @@ int play(const in_char *filename)
 		return 1;
 	}
 
-	LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
-	strFilename = fn;
-	SafeFree((void*)fn);
+	std::string strFilename;
+	strFilename.reserve(MAX_PATH);
+	ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
 
 	const size_t i = strFilename.find('}');
 	if(i > 0) 
 	{
 		//assume char '{' will never occur in name unless its our subsong sign
 		const size_t j = strFilename.find('{');
-		str = strFilename.substr(j+1,i -j -1);
+		const std::string str = strFilename.substr(j+1,i -j -1);
 		int subsongIndex = AStr2I(str.c_str());
 		strFilename = strFilename.substr(i+1);
 		sidPlayer->LoadTune(strFilename.c_str());
@@ -380,9 +377,11 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 	createsidplayer();
 
 	SidTune tune(0);
-	LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
-	tune.load(fn);
-	SafeFree((void*)fn);
+
+	std::string strFilename;
+	strFilename.reserve(MAX_PATH);
+	ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
+	tune.load(strFilename.c_str());
 
 	const SidTuneInfo* tuneInfo = tune.getInfo();
 	if (tuneInfo == NULL)
@@ -448,10 +447,8 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	else
 	{
 		subsongIndex = 1;
-
-		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
-		strFilename = fn;
-		SafeFree((void*)fn);
+		strFilename.reserve(MAX_PATH);
+		ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
 
 		if(strFilename[0] == '{') 
 		{
@@ -573,8 +570,8 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 
 	if (title != NULL)
 	{
-		const AutoWide titleTemplateW(titleTemplate.c_str());
-		wcsncpy(title, titleTemplateW, GETFILEINFO_TITLE_LENGTH);
+		ConvertANSI(titleTemplate.c_str(), (const int)titleTemplate.size(),
+									  CP_ACP, title, FILETITLE_SIZE, NULL);
 	}
 
 	/*if ((info->songs() == 1) || (firstSong == false) || !filename || !filename[0])
@@ -721,7 +718,7 @@ void GetFileExtensions(void)
 {
 	if (!plugin.FileExtensions)
 	{
-		plugin.FileExtensions = BuildInputFileListString(L"SID", L"Commodore 64 SID Music File (*.SID)");
+		plugin.FileExtensions = BuildInputFileListString(L"SID", 3, L"Commodore 64 SID Music File (*.SID)", 35);
 	}
 }
 
@@ -765,18 +762,17 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 		// add first pane
 		const SidTuneInfo* info;
 		SidTune tune(0);
-		std::string strfilename;
+		std::string strFilename;
 
-		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
-		strfilename = fn;
-		SafeFree((void*)fn);
+		strFilename.reserve(MAX_PATH);
+		ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
 
-		const size_t i = strfilename.find('}');
+		const size_t i = strFilename.find('}');
 		if (i > 0) 
 		{
-			strfilename = strfilename.substr(i+1);
+			strFilename = strFilename.substr(i+1);
 		}
-		tune.load(strfilename.c_str());
+		tune.load(strFilename.c_str());
 		info = tune.getInfo();
 		if (info)
 		{
@@ -875,10 +871,8 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 #endif
 	{
 		subsongIndex = 1;
-
-		LPCSTR fn = ConvertPathToA(filename, NULL, 0, CP_ACP);
-		strFilename = fn;
-		SafeFree((void*)fn);
+		strFilename.reserve(MAX_PATH);
+		ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
 
 		if (strFilename[0] == '{') 
 		{
@@ -1115,7 +1109,8 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		}
 		else
 		{
-			wcsncpy(ret, L"1", retlen);
+			ret[0] = L'1';
+			ret[1] = 0;
 		}
 		retval = 1;
 	}

@@ -479,5 +479,6 @@
     <ClCompile Include="..\src\builders\residfp-builder\residfp\FilterModelConfig.cpp">
       <Filter>resid-fp-builder\residfp</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\simpleMixer.cpp" />
   </ItemGroup>
 </Project>
