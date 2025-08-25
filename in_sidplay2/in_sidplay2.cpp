@@ -1122,8 +1122,8 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	else if (SameStrA(metadata, "bitrate"))
 	{
 		const auto& config = sidPlayer->GetCurrentConfig();
-		const int numChann = (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
-							  (config.sidConfig.playback == SidConfig::STEREO) ? 2 : 1 : 1);
+		const int numChann = (!PlaybackIsMono() ? (config.sidConfig.
+							  playback == SidConfig::STEREO) ? 2 : 1 : 1);
 		I2WStr(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen);
 		retval = 1;
 	}

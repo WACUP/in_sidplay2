@@ -38,7 +38,7 @@ void ConfigDlgInitDialog(HWND hWnd)
 	//channels
 	SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_ADDSTRING, 0, (LPARAM)L"Mono");
 
-	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
+	if (!PlaybackIsMono())
 	{
 		SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_ADDSTRING, 0, (LPARAM)L"Stereo");
 
@@ -163,7 +163,7 @@ void UpdateConfig(HWND hWnd)
 		break;
 	}
 
-	if (!plugin.config->GetBool(playbackConfigGroupGUID, L"mono", false))
+	if (!PlaybackIsMono())
 	{
 		//playback channels
 		val = (int)SendDlgItemMessage(hWnd, IDC_CHANNELS, CB_GETCURSEL, 0, 0);

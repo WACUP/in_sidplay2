@@ -93,8 +93,8 @@ void CThreadSidPlayer::Play(void)
 	//if stopped then create new thread to play
 	if(m_playerStatus == SP_STOPPED)
 	{
-		const int numChann = (!m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ? 
-							  (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
+		const int numChann = (!PlaybackIsMono() ? (m_playerConfig.sidConfig.
+								 playback == SidConfig::STEREO)? 2 : 1 : 1);
 
 		// for the playback state to match correctly with the wacup core playback
 		// config then we have to nudge everything otherwise stereo vs mono modes
@@ -123,9 +123,7 @@ void CThreadSidPlayer::Play(void)
 		//default volume
 		m_inmod->outMod->SetVolume(-666); 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = StartThread(CThreadSidPlayer::Run, this, static_cast<int>(m_inmod->
-									 config->GetInt(playbackConfigGroupGUID, L"priority",
-														THREAD_PRIORITY_HIGHEST)), 0, NULL);
+		m_threadHandle = StartPlaybackThread(CThreadSidPlayer::Run, this, 0, NULL);
 	}
 }
 
@@ -208,8 +206,8 @@ DWORD WINAPI CThreadSidPlayer::Run(void* thisparam)
 	playerObj->m_decodedSampleCount = 0;
 	playerObj->m_playTimems = 0;
 	bps = PLAYBACK_BIT_PRECISION;//playerObj->m_playerConfig.sidConfig.precision;
-	numChn = (!playerObj->m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
-			  (playerObj->m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
+	numChn = (!PlaybackIsMono() ? (playerObj->m_playerConfig.sidConfig.
+							playback == SidConfig::STEREO)? 2 : 1 : 1);
 	freq = playerObj->m_playerConfig.sidConfig.frequency;
 	desiredLen = 576 * (PLAYBACK_BIT_PRECISION >>3) * numChn * (playerObj->m_inmod->dsp_isactive()?2:1);
 
@@ -750,8 +748,8 @@ void CThreadSidPlayer::SetConfig(PlayerConfig* newConfig)
 	}
 	//m_playerConfig.sidConfig.
 
-	numChann = (!m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
-				(m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
+	numChann = (!PlaybackIsMono() ? (m_playerConfig.sidConfig.
+				   playback == SidConfig::STEREO)? 2 : 1 : 1);
 
 	// for the playback state to match correctly with the wacup core playback
 	// config then we have to nudge everything otherwise stereo vs mono modes
@@ -831,8 +829,8 @@ void CThreadSidPlayer::DoSeek()
 {
 	int bits;
 	int skip_bytes;
-	int numChn = (!m_inmod->config->GetBool(playbackConfigGroupGUID, L"mono", false) ?
-				  (m_playerConfig.sidConfig.playback == SidConfig::STEREO)? 2 : 1 : 1);
+	int numChn = (!PlaybackIsMono() ? (m_playerConfig.sidConfig.
+					 playback == SidConfig::STEREO)? 2 : 1 : 1);
 	int freq = m_playerConfig.sidConfig.frequency;
 	int timesek = m_seekNeedMs / 1000;
 	if (timesek == 0) return;
