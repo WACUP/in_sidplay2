@@ -147,10 +147,11 @@ void Player::initialise()
         powerOnDelay = (uint_least16_t)((m_rand.next() >> 3) & SidConfig::MAX_POWER_ON_DELAY);
     }
 
-    // Run for calculated number of cycles
-    for (int i = 0; i <= powerOnDelay; i++)
+    powerOnDelay += 8000;
+    // Run for ~ [25000,50000] cycles
+    for (int i = 0; i < powerOnDelay; i++)
     {
-        for (int j = 0; j < 100; j++)
+        for (int j = 0; j < 3; j++)
             m_c64.clock();
         m_mixer.clockChips();
         m_mixer.resetBufs();
@@ -456,7 +457,7 @@ bool Player::config(const SidConfig &cfg, bool force)
             const c64::cia_model_t ciaModel = getCiaModel(cfg.ciaModel);
             m_c64.setCiaModel(ciaModel);
 
-            sidParams(m_c64.getMainCpuSpeed(), cfg.frequency, cfg.samplingMethod, cfg.fastSampling);
+            sidParams(m_c64.getMainCpuSpeed(), cfg.frequency, cfg.samplingMethod);
 
             // Configure, setup and install C64 environment/events
             initialise();
@@ -677,7 +678,7 @@ void Player::sidCreate(sidbuilder *builder, SidConfig::sid_model_t defaultModel,
 }
 
 void Player::sidParams(double cpuFreq, int frequency,
-                        SidConfig::sampling_method_t sampling, bool fastSampling)
+                        SidConfig::sampling_method_t sampling)
 {
     for (unsigned int i = 0; ; i++)
     {
@@ -685,7 +686,7 @@ void Player::sidParams(double cpuFreq, int frequency,
         if (s == nullptr)
             break;
 
-        s->sampling((float)cpuFreq, frequency, sampling, fastSampling);
+        s->sampling((float)cpuFreq, frequency, sampling);
     }
 }
 

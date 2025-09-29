@@ -607,7 +607,7 @@ void CThreadSidDecoder::DoSeek()
 	//now take time calculationns from emulation engine and calculate other variables
 
 	m_engine->time();
-	m_playTimems = (m_engine->time() * 1000);// / timer->timebase();
+	m_playTimems = (m_engine->time() * 1000ULL);// / timer->timebase();
 	m_decodedSampleCount = (m_playTimems * freq) / 1000;
 	//m_playTimems =(m_decodedSampleCount * 1000) / m_playerConfig.sidConfig.frequency;
 	m_engine->fastForward(100);

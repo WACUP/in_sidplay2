@@ -324,7 +324,7 @@ const SidTuneInfo* CThreadSidPlayer::GetTuneInfo(void)
 
 int CThreadSidPlayer::GetPlayTime(void)
 {
-	return (int)(m_inmod->outMod ? m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()) : 0);
+	return (m_inmod->outMod ? ((int)m_playTimems+(m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime())) : 0);
 	//return ((m_timer->time()*1000)/m_timer->timebase()) + (m_inmod->outMod->GetOutputTime()-m_inmod->outMod->GetWrittenTime()); 
 }
 
@@ -873,7 +873,7 @@ void CThreadSidPlayer::DoSeek()
 	//now take time calculationns from emulation engine and calculate other variables
 
 	m_engine->time();
-	m_playTimems = (m_engine->time() * 1000);// / timer->timebase();
+	m_playTimems = (m_engine->time() * 1000ULL);// / timer->timebase();
 	m_decodedSampleCount = (m_playTimems * freq) / 1000;
 	//m_playTimems =(m_decodedSampleCount * 1000) / m_playerConfig.sidConfig.frequency;
 	m_engine->fastForward(100);
