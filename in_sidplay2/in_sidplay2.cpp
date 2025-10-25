@@ -106,18 +106,8 @@ int init(void)
 	/*StartPluginLangWithDesc(plugin.hDllInstance, InSidiousLangGUID,
 			 IDS_PLUGIN_NAME, PLUGIN_VERSION, &plugin.description);*/
 
-	preferences = (prefsDlgRecW*)SafeMalloc(sizeof(prefsDlgRecW));
-	if (preferences)
-	{
-		preferences->hInst = plugin.hDllInstance;
-		preferences->dlgID = IDD_CONFIG_DLG;
-		preferences->name = LngStringDup(IDS_SID);
-		preferences->proc = ConfigDlgWndProc;
-		preferences->where = 10;
-		preferences->_id = 98;
-		preferences->next = (_prefsDlgRec*)0xACE;
-		AddPrefsPage((WPARAM)preferences, TRUE);
-	}
+	InputAddPrefsPage(&preferences, plugin.hDllInstance, IDD_CONFIG_DLG,
+						   ConfigDlgWndProc, LngStringDup(IDS_SID), 98);
 
 	InitializeCriticalSectionEx(&g_sidPlayer_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
 	InitializeCriticalSectionEx(&g_info_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
