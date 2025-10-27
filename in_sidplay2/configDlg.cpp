@@ -15,9 +15,9 @@ extern In_Module plugin;
 void ConfigDlgInitDialog(HWND hWnd)
 {
 	int val = 0;
-	char buf[20] = { 0 };
+	char buf[20]/* = { 0 }*/;
 
-	createsidplayer();
+	create_sid_player(false);
 
 	playerConfig = new PlayerConfig;
 	//PlayerConfig cfg;

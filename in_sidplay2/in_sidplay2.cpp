@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.15.1.18"
+#define PLUGIN_VERSION L"2.15.1.19"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.15.1 - 19 Sep 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -75,13 +75,15 @@ void about(HWND hwndParent)
 	AboutMessageBox(hwndParent, message, title);
 }
 
-void createsidplayer(void)
+const bool create_sid_player(const bool skip_if_not_already_created)
 {
+	bool has_player = false;
+
 	if (!closing && (plugin.hMainWindow != NULL))
 	{
 		EnterCriticalSection(&g_sidPlayer_cs);
 
-		if (sidPlayer == NULL)
+		if ((sidPlayer == NULL) && !skip_if_not_already_created)
 		{
 			sidPlayer = new CThreadSidPlayer(plugin);
 
@@ -91,8 +93,12 @@ void createsidplayer(void)
 			}
 		}
 
+		has_player = (sidPlayer != NULL);
+
 		LeaveCriticalSection(&g_sidPlayer_cs);
 	}
+
+	return has_player;
 }
 
 int init(void)
@@ -154,8 +160,7 @@ void quit(void) {
 // called when winamp wants to play a file
 int play(const in_char *filename) 
 {
-	createsidplayer();
-	if(sidPlayer == NULL)
+	if(!create_sid_player(false))
 	{
 		//error we cannot recover from
 		return 1;
@@ -225,8 +230,7 @@ void stop(void)
 int getlength(void)
 {
 	//return (sidPlayer->GetNumSubtunes()-1)*1000;
-	createsidplayer();
-	return ((sidPlayer!= NULL) ? sidPlayer->GetSongLengthMs() : 0);
+	return (create_sid_player(false) ? sidPlayer->GetSongLengthMs() : 0);
 }
 
 // returns current output position, in ms.
@@ -364,7 +368,7 @@ const StilBlock *getStilBlock(const std::string &strFilename, const int subsongI
 
 extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 {
-	createsidplayer();
+	create_sid_player(false);
 
 	SidTune tune(0);
 
@@ -403,7 +407,7 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	wchar_t* foundChar;*/
 	bool firstSong = true;
 
-	createsidplayer();
+	create_sid_player(false);
 
 	/*if (gUpdaterThreadHandle != 0)
 	{
@@ -819,11 +823,17 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		return 0;
 	}
 
-	createsidplayer();
+	// we don't need to create the player if we're getting a
+	// reset request & there's not been any prior creations
+	const bool reset = SameStrA(metadata, "reset"),
+			   has_player = create_sid_player(reset);
+	if (!has_player && reset)
+	{
+		return 0;
+	}
 
 	EnterCriticalSection(&g_info_cs);
 
-	const bool reset = SameStrA(metadata, "reset");
 	std::string strFilename;
 	int length = -1, subsongIndex = 1;
 	//bool firstSong = true;
