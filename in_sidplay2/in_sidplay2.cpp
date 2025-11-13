@@ -113,7 +113,7 @@ int init(void)
 			 IDS_PLUGIN_NAME, PLUGIN_VERSION, &plugin.description);*/
 
 	InputAddPrefsPage(&preferences, plugin.hDllInstance, IDD_CONFIG_DLG,
-						   ConfigDlgWndProc, LngStringDup(IDS_SID), 98);
+					  ConfigDlgWndProc, LngStringDup(IDS_SID), 98, TRUE);
 
 	InitializeCriticalSectionEx(&g_sidPlayer_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
 	InitializeCriticalSectionEx(&g_info_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
