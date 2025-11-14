@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.15.2.19"
+#define PLUGIN_VERSION L"2.15.2.20"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.15.2 - 2 Nov 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -166,24 +166,18 @@ int play(const in_char *filename)
 		return 1;
 	}
 
-	std::string strFilename;
-	strFilename.reserve(MAX_PATH);
-	ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
+	char strFilename[MAX_PATH];
+	ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), filename, CP_ACP);
 
-	const size_t i = strFilename.find('}');
-	if(i > 0) 
+	if (strFilename[0] == '{')
 	{
-		//assume char '{' will never occur in name unless its our subsong sign
-		const size_t j = strFilename.find('{');
-		const std::string str = strFilename.substr(j+1,i -j -1);
-		int subsongIndex = AStr2I(str.c_str());
-		strFilename = strFilename.substr(i+1);
-		sidPlayer->LoadTune(strFilename.c_str());
-		sidPlayer->PlaySubtune(subsongIndex);
+		const char* str = strchr(strFilename, '}');
+		sidPlayer->LoadTune((str ? (++str) : strFilename));
+		sidPlayer->PlaySubtune(AStr2I((strFilename + 1)));
 	}
-	else 
+	else
 	{
-		sidPlayer->LoadTune(strFilename.c_str());
+		sidPlayer->LoadTune(strFilename);
 		const SidTuneInfo* tuneInfo = sidPlayer->GetTuneInfo();
 		if (tuneInfo == NULL)
 		{
@@ -191,7 +185,6 @@ int play(const in_char *filename)
 		}
 		sidPlayer->PlaySubtune(tuneInfo->startSong());
 	}
-
 	return 0; 
 }
 
@@ -372,10 +365,9 @@ extern "C" __declspec(dllexport) int GetSubSongInfo(const wchar_t *filename)
 
 	SidTune tune(0);
 
-	std::string strFilename;
-	strFilename.reserve(MAX_PATH);
-	ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
-	tune.load(strFilename.c_str());
+	char strFilename[MAX_PATH];
+	ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), filename, CP_ACP);
+	tune.load(strFilename);
 
 	const SidTuneInfo* tuneInfo = tune.getInfo();
 	if (tuneInfo == NULL)
@@ -447,30 +439,28 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 		if(strFilename[0] == '{') 
 		{
 			firstSong = false;
-			//assume char '{' will never occur in name unless its our subsong sign
-			const size_t i = strFilename.find('}');
-			str = strFilename.substr(1, i -1);
-			subsongIndex = AStr2I(str.c_str());
-			strFilename = strFilename.substr(i + 1);
-			//get info from other file if we got real name
-			tune.load(strFilename.c_str());
-			tuneInfo = tune.getInfo();
-			if (tuneInfo == NULL)
-			{
-				return;
-			}
-		}
-		else
-		{
-			tune.load(strFilename.c_str());
-			tuneInfo = tune.getInfo();
-			if (tuneInfo == NULL)
-			{
-				return;
-			}
 
-			subsongIndex = tuneInfo->startSong();
+			//assume char '{' will never occur in name unless its our subsong sign
+			const char* str = strchr(strFilename.c_str(), '}');
+			subsongIndex = AStr2I((strFilename.c_str() + 1));
+
+			//get info from other file if we got real name
+			tune.load((str ? (++str) : strFilename.c_str()));
+			tuneInfo = tune.getInfo();
+			if (tuneInfo == NULL)
+			{
+				return;
+			}
 		}
+
+		tune.load(strFilename.c_str());
+		tuneInfo = tune.getInfo();
+		if (tuneInfo == NULL)
+		{
+			return;
+		}
+
+		subsongIndex = tuneInfo->startSong();
 
 		//tune.selectSong(info.startSong);
 		tune.selectSong(subsongIndex);
@@ -756,17 +746,12 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 		// add first pane
 		const SidTuneInfo* info;
 		SidTune tune(0);
-		std::string strFilename;
 
-		strFilename.reserve(MAX_PATH);
-		ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
+		char strFilename[MAX_PATH];
+		ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), filename, CP_ACP);
 
-		const size_t i = strFilename.find('}');
-		if (i > 0) 
-		{
-			strFilename = strFilename.substr(i+1);
-		}
-		tune.load(strFilename.c_str());
+		const char* str = strchr(strFilename, '}');
+		tune.load((str ? (++str) : strFilename));
 		info = tune.getInfo();
 		if (info)
 		{
@@ -834,7 +819,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 	EnterCriticalSection(&g_info_cs);
 
-	std::string strFilename;
 	int length = -1, subsongIndex = 1;
 	//bool firstSong = true;
 
@@ -869,104 +853,101 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	}
 	else
 #endif
+
+	char strFilename[MAX_PATH];
+	subsongIndex = 1;
+	ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), filename, CP_ACP);
+
+	if (strFilename[0] == '{') 
 	{
-		subsongIndex = 1;
-		strFilename.reserve(MAX_PATH);
-		ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
+		//assume char '{' will never occur in name unless its our subsong sign
+		const char* str = strchr(strFilename, '}');
 
-		if (strFilename[0] == '{') 
+		if (!SameStrA((str ? (++str) : strFilename), g_strFilename.c_str()))
 		{
-			//firstSong = false;
-			//assume char '{' will never occur in name unless its our subsong sign
-			const size_t i = strFilename.find('}');
-			const std::string str = strFilename.substr(1,i -1);
-			subsongIndex = AStr2I(str.c_str());
-			strFilename = strFilename.substr(i+1);
-
-			if (strFilename != g_strFilename)
-			{
-				g_strFilename = strFilename;
-
-				if (g_tune_info != NULL)
-				{
-					delete g_tune_info;
-					g_tune_info = NULL;
-				}
-			}
-
-			if (reset)
-			{
-				LeaveCriticalSection(&g_info_cs);
-				return 0;
-			}
-
-			//get info from other file if we got real name
-			if ((g_tune_info == NULL) && (sidPlayer != NULL))
-			{
-				g_tune_info = new SidTune(strFilename.c_str());
-			}
-			//tune.load(strFilename.c_str());
-			if (g_tune_info != NULL)
-			{
-				g_tuneInfo = g_tune_info->getInfo();
-			}
-
-			if (g_tuneInfo == NULL)
-			{
-				LeaveCriticalSection(&g_info_cs);
-				return 0;
-			}
-		}
-		else
-		{
-			if (strFilename != g_strFilename)
-			{
-				g_strFilename = strFilename;
-
-				if (g_tune_info != NULL)
-				{
-					delete g_tune_info;
-					g_tune_info = NULL;
-				}
-			}
-
-			if (reset)
-			{
-				LeaveCriticalSection(&g_info_cs);
-				return 0;
-			}
-
-			if ((g_tune_info == NULL) && (sidPlayer != NULL))
-			{
-				g_tune_info = new SidTune(strFilename.c_str());
-			}
-			//tune.load(strFilename.c_str());
+			g_strFilename = str;
 
 			if (g_tune_info != NULL)
 			{
-				g_tuneInfo = g_tune_info->getInfo();
+				delete g_tune_info;
+				g_tune_info = NULL;
 			}
-
-			if (g_tuneInfo == NULL)
-			{
-				LeaveCriticalSection(&g_info_cs);
-				return 0;
-			}
-
-			subsongIndex = g_tuneInfo->startSong();
 		}
 
-		//tune.selectSong(info.startSong);
-		g_tune_info->selectSong(subsongIndex);
-		length = sidPlayer->GetSongLengthMs(*g_tune_info);
+		if (reset)
+		{
+			LeaveCriticalSection(&g_info_cs);
+			return 0;
+		}
 
-		if (length < 0)
+		subsongIndex = AStr2I((strFilename + 1));
+
+		//get info from other file if we got real name
+		if ((g_tune_info == NULL) && (sidPlayer != NULL))
+		{
+			g_tune_info = new SidTune(str);
+		}
+
+		if (g_tune_info != NULL)
+		{
+			g_tuneInfo = g_tune_info->getInfo();
+		}
+
+		if (g_tuneInfo == NULL)
 		{
 			LeaveCriticalSection(&g_info_cs);
 			return 0;
 		}
 	}
-	
+	else
+	{
+		if (!SameStrA(strFilename, g_strFilename.c_str()))
+		{
+			g_strFilename = strFilename;
+
+			if (g_tune_info != NULL)
+			{
+				delete g_tune_info;
+				g_tune_info = NULL;
+			}
+		}
+
+		if (reset)
+		{
+			LeaveCriticalSection(&g_info_cs);
+			return 0;
+		}
+
+		if ((g_tune_info == NULL) && (sidPlayer != NULL))
+		{
+			g_tune_info = new SidTune(strFilename);
+		}
+		//tune.load(strFilename.c_str());
+
+		if (g_tune_info != NULL)
+		{
+			g_tuneInfo = g_tune_info->getInfo();
+		}
+
+		if (g_tuneInfo == NULL)
+		{
+			LeaveCriticalSection(&g_info_cs);
+			return 0;
+		}
+
+		subsongIndex = g_tuneInfo->startSong();
+	}
+
+	//tune.selectSong(info.startSong);
+	g_tune_info->selectSong(subsongIndex);
+	length = sidPlayer->GetSongLengthMs(*g_tune_info);
+
+	if (length < 0)
+	{
+		LeaveCriticalSection(&g_info_cs);
+		return 0;
+	}
+
 	//check if we got correct tune info
 	//if (info.c64dataLen == 0) return;
 	if (!g_tuneInfo || !g_tuneInfo->c64dataLen())
@@ -1149,31 +1130,28 @@ extern "C" __declspec(dllexport) intptr_t winampGetExtendedRead_openW(const wcha
 	CThreadSidDecoder *sidDecoder = new CThreadSidDecoder();
 	if (sidDecoder)
 	{
-		std::string strFilename, str;
-		strFilename.assign(AutoCharFn(fn));
+		char strFilename[MAX_PATH];
+		ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), fn, CP_ACP);
 
-		int i = strFilename.find('}');
-		if (i > 0)
+		if (strFilename[0] == '{')
 		{
 			//assume char '{' will never occur in name unless its our subsong sign
-			int j = strFilename.find('{');
-			str = strFilename.substr(j + 1, i - j - 1);
-			int subsongIndex = AStr2I(str.c_str());
-			strFilename = strFilename.substr(i + 1);
-			//sidDecoder->LoadTune(strFilename.c_str());
-			//sidDecoder->PlaySubtune(subsongIndex);
+			const char* str = strchr(strFilename, '}');
+			sidDecoder->LoadTune((str ? (++str) : strFilename));
+			sidDecoder->PlaySubtune(AStr2I((strFilename + 1)));
 		}
-		//else
-		//{
-			sidDecoder->LoadTune(strFilename.c_str());
+		else
+		{
+			sidDecoder->LoadTune(strFilename);
 			const SidTuneInfo* tuneInfo = sidDecoder->GetTuneInfo();
 			if (tuneInfo == NULL)
 			{
 				delete sidDecoder;
 				return 0;
 			}
-			//sidDecoder->PlaySubtune(tuneInfo->startSong());
-		//}
+
+			sidDecoder->PlaySubtune(tuneInfo->startSong());
+		}
 
 		if (bps)
 		{
