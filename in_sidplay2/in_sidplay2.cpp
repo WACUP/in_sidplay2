@@ -1078,6 +1078,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 				++count;
 				++year_str;
 			}
+			ret[count] = 0;
 
 			retval = 1;
 		}
