@@ -114,8 +114,12 @@ void CThreadSidPlayer::Play(void)
 		}
 
 		//visualization init
+#ifndef _WIN64
 		m_inmod->SAVSAInit(maxLatency,m_playerConfig.sidConfig.frequency);
 		m_inmod->VSASetInfo(m_playerConfig.sidConfig.frequency,numChann);
+#else
+		m_inmod->VisInitInfo(maxLatency,m_playerConfig.sidConfig.frequency,numChann);
+#endif
 
 		m_inmod->SetInfo((m_playerConfig.sidConfig.frequency * PLAYBACK_BIT_PRECISION * numChann) / 1000,
 						  m_playerConfig.sidConfig.frequency / 1000, numChann, 1);

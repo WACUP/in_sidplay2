@@ -651,9 +651,15 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 #endif
 
 // module definition.
+#define OUR_INPUT_PLUG_IN_FEATURES INPUT_HAS_READ_META | INPUT_USES_UNIFIED_ALT3 | \
+								   INPUT_ADDS_TAB_TO_UNIFIED_ALT3 | \
+								   INPUT_HAS_FORMAT_CONVERSION_UNICODE | \
+								   INPUT_HAS_FORMAT_CONVERSION_SET_TIME_MODE
+
 extern In_Module plugin = 
 {
 	IN_VER_WACUP,	// defined in IN2.H
+	IN_INIT_PRE_FEATURES
 	(char *)L"SID Player v" PLUGIN_VERSION,
 	0,	// hMainWindow (filled in by winamp)
 	0,  // hDllInstance (filled in by winamp)
@@ -690,10 +696,7 @@ extern In_Module plugin =
 
 	0,			// out_mod filled in by winamp
 	NULL,       // api_service
-	INPUT_HAS_READ_META | INPUT_USES_UNIFIED_ALT3 |
-	INPUT_ADDS_TAB_TO_UNIFIED_ALT3 |
-	INPUT_HAS_FORMAT_CONVERSION_UNICODE |
-	INPUT_HAS_FORMAT_CONVERSION_SET_TIME_MODE,
+	IN_INIT_POST_FEATURES
 	GetFileExtensions,	// loading optimisation
 	IN_INIT_WACUP_END_STRUCT
 };
