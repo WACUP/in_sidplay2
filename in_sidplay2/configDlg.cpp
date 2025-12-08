@@ -272,6 +272,8 @@ int CALLBACK WINAPI BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPAR
 {
 	if (uMsg == BFFM_INITIALIZED)
 	{
+		DarkModeSetup(hwnd);
+
 		if (playerConfig->hvscDirectory)
 		{
 			SendMessage(hwnd, BFFM_SETSELECTIONA, 1, (LPARAM)playerConfig->hvscDirectory);
@@ -282,12 +284,17 @@ int CALLBACK WINAPI BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPAR
 
 void SelectHvscDirectory(HWND hWnd)
 {
-	BROWSEINFO bi = { 0 };
+	BROWSEINFO bi/* = { 0 }*/;
 	bi.hwndOwner = hWnd;
 	// TODO localise
 	bi.lpszTitle = L"Select HVSC directory";
 	bi.ulFlags = BIF_RETURNONLYFSDIRS | BIF_USENEWUI;
 	bi.lpfn = BrowseCallbackProc;
+	bi.pidlRoot = NULL;
+	bi.pszDisplayName = NULL;
+	bi.lParam = NULL;
+	bi.iImage = 0;
+
 	LPITEMIDLIST pidl = BrowseForFolder(&bi);
 	if (pidl)
 	{

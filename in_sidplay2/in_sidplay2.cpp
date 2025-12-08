@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.15.2.20"
+#define PLUGIN_VERSION L"2.15.2.21"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.15.2 - 2 Nov 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -960,14 +960,15 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	}
 
 	// even if no file, return a 1 and write "0"
-	if (SameStrA(metadata, "length"))
+	const bool length_seconds = SameStrA(metadata, "length_seconds");
+	if (length_seconds || SameStrA(metadata, "length"))
 	{
 		if (length <= 0)
 		{
 			length = -1000;
 		}
 
-		I2WStr(length, ret, retlen);
+		I2WStr((!length_seconds ? length : (length / 1000)), ret, retlen);
 		retval = 1;
 	}
 	else if (SameStrA(metadata, "title"))

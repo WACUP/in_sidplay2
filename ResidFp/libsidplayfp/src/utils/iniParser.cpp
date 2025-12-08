@@ -106,7 +106,7 @@ bool iniParser::open_internal(std::ifstream & iniFile)
             try
             {
                 if (mIt != sections.end())
-                (*mIt).second.insert(parseKey(buffer));
+                    (*mIt).second.insert(parseKey(buffer));
             }
             catch (parseError const &) {};
             break;
