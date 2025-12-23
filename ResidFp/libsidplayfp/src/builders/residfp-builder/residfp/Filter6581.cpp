@@ -24,6 +24,8 @@
 
 #include "Integrator6581.h"
 
+#include <cassert>
+
 namespace reSIDfp
 {
 

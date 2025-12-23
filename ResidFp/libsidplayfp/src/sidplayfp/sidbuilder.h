@@ -64,7 +64,6 @@ public:
      *
      * @return number of used sids, 0 if none.
      */
-    // dro change
     unsigned int usedDevices() const { return (unsigned int)sidobjs.size(); }
 
     /**

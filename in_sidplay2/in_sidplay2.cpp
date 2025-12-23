@@ -1,5 +1,5 @@
-#define PLUGIN_VERSION L"2.15.2.21"
-#define PLUGIN_LIBRARY_BUILD_DATE L"2.15.2 - 2 Nov 2025"
+#define PLUGIN_VERSION L"2.16.0.22"
+#define PLUGIN_LIBRARY_BUILD_DATE L"2.16.0 - 23 Dec 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
 //
@@ -761,7 +761,7 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 			SetProp(parent, L"INBUILT_NOWRITEINFO", (HANDLE)1);
 
 			// TODO localise
-			wcsncpy(name, L"STIL Information", namelen);
+			CopyCchStr(name, namelen, L"STIL Information");
 			return LangCreateDialog(IDD_INFO, parent, InfoDlgWndProc, (LPARAM)info);
 		}
 	}
@@ -770,8 +770,6 @@ extern "C" __declspec(dllexport) HWND winampAddUnifiedFileInfoPane(int n, const 
 
 extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filename, char *metadata, wchar_t *ret, int retlen)
 {
-	int retval = 0;
-
 	if (SameStrA(metadata, "type") ||
 		SameStrA(metadata, "lossless") ||
 		SameStrA(metadata, "streammetadata"))
@@ -789,18 +787,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
     {
         return 0;
     }
-	else if (SameStrA(metadata, "family") ||
-			 // TODO add more to "formatinformation" ?
-			 SameStrA(metadata, "formatinformation"))
-	{
-		if (!filename || !filename[0])
-		{
-			return 0;
-		}
-		// TODO localise
-		wcsncpy(ret, L"Commodore 64 Music File", retlen);
-		return 1;
-	}
 
 	// if we don't have a valid file or it's a metadata cache
 	// reset then we can just abort processing further to not
@@ -809,6 +795,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	if (!filename || !*filename)
 	{
 		return 0;
+	}
+	
+	if (SameStrA(metadata, "family") || SameStrA(metadata, "formatinformation"))
+	{
+		// TODO add more to "formatinformation" ?
+		// TODO localise
+		return (int)CopyCchStrEx(ret, retlen, L"Commodore 64 Music File");
 	}
 
 	// we don't need to create the player if we're getting a
@@ -959,6 +952,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		return 0;
 	}
 
+	int retval = 0;
 	// even if no file, return a 1 and write "0"
 	const bool length_seconds = SameStrA(metadata, "length_seconds");
 	if (length_seconds || SameStrA(metadata, "length"))
@@ -968,8 +962,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			length = -1000;
 		}
 
-		I2WStr((!length_seconds ? length : (length / 1000)), ret, retlen);
-		retval = 1;
+		I2WStrLen((!length_seconds ? length : (length / 1000)), ret, retlen, &retval);
 	}
 	else if (SameStrA(metadata, "title"))
 	{
@@ -978,14 +971,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->TITLE.empty())
 			{
-				PrintfCch(ret, retlen, L"%S", sb->TITLE.c_str());
+				retval = (int)PrintfCch(ret, retlen, L"%S", sb->TITLE.c_str());
 				LeaveCriticalSection(&g_info_cs);
-				return 1;
+				return retval;
 			}
 		}
 
-		PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(0));
-		retval = 1;
+		retval = (int)PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(0));
 	}
 	else if (SameStrA(metadata, "artist"))
 	{
@@ -994,14 +986,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->ARTIST.empty())
 			{
-				PrintfCch(ret, retlen, L"%S", sb->ARTIST.c_str());
+				retval = (int)PrintfCch(ret, retlen, L"%S", sb->ARTIST.c_str());
 				LeaveCriticalSection(&g_info_cs);
-				return 1;
+				return retval;
 			}
 		}
 
-		PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(1));
-		retval = 1;
+		retval = (int)PrintfCch(ret, retlen, L"%S", g_tuneInfo->infoString(1));
 	}
 	else if (SameStrA(metadata, "album"))
 	{
@@ -1010,9 +1001,9 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->NAME.empty())
 			{
-				PrintfCch(ret, retlen, L"%S", sb->NAME.c_str());
+				retval = (int)PrintfCch(ret, retlen, L"%S", sb->NAME.c_str());
 				LeaveCriticalSection(&g_info_cs);
-				return 1;
+				return retval;
 			}
 		}
 	}
@@ -1023,14 +1014,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->COMMENT.empty())
 			{
-				PrintfCch(ret, retlen, L"%S", sb->COMMENT.c_str());
+				retval = (int)PrintfCch(ret, retlen, L"%S", sb->COMMENT.c_str());
 				LeaveCriticalSection(&g_info_cs);
-				return 1;
+				return retval;
 			}
 		}
 
-		PrintfCch(ret, retlen, L"%S", g_tuneInfo->commentString(0));
-		retval = 1;
+		retval = (int)PrintfCch(ret, retlen, L"%S", g_tuneInfo->commentString(0));
 	}
 	else if (SameStrA(metadata, "publisher"))
 	{
@@ -1039,9 +1029,9 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->AUTHOR.empty())
 			{
-				PrintfCch(ret, retlen, L"%S", sb->AUTHOR.c_str());
+				retval = (int)PrintfCch(ret, retlen, L"%S", sb->AUTHOR.c_str());
 				LeaveCriticalSection(&g_info_cs);
-				return 1;
+				return retval;
 			}
 		}
 
@@ -1062,8 +1052,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 					++pub_str;
 				}
 
-				PrintfCch(ret, retlen, L"%S", pub_str);
-				retval = 1;
+				retval = (int)PrintfCch(ret, retlen, L"%S", pub_str);
 			}
 		}
 	}
@@ -1075,43 +1064,38 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		if (year_str && *year_str)
 		{
 			// copy up to the space into the buffer
-			int count = 0;
-			while (year_str && *year_str != ' ' && count < retlen)
+			while (year_str && *year_str != ' ' && retval < retlen)
 			{
-				ret[count] = *year_str;
-				++count;
+				ret[retval] = *year_str;
+				++retval;
 				++year_str;
 			}
-			ret[count] = 0;
-
-			retval = 1;
+			ret[retval] = 0;
 		}
 	}
 	else if (SameStrA(metadata, "track"))
 	{
 		if (g_tuneInfo->songs() > 1)
 		{
-			I2WStr(subsongIndex, ret, retlen);
+			I2WStrLen(subsongIndex, ret, retlen, &retval);
 		}
 		else
 		{
 			ret[0] = L'1';
 			ret[1] = 0;
+			retval = 1;
 		}
-		retval = 1;
 	}
 	else if (SameStrA(metadata, "samplerate"))
 	{
-		I2WStr(sidPlayer->GetCurrentConfig().sidConfig.frequency, ret, retlen);
-		retval = 1;
+		I2WStrLen(sidPlayer->GetCurrentConfig().sidConfig.frequency, ret, retlen, &retval);
 	}
 	else if (SameStrA(metadata, "bitrate"))
 	{
 		const auto& config = sidPlayer->GetCurrentConfig();
 		const int numChann = (!PlaybackIsMono() ? (config.sidConfig.
 							  playback == SidConfig::STEREO) ? 2 : 1 : 1);
-		I2WStr(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen);
-		retval = 1;
+		I2WStrLen(((config.sidConfig.frequency * numChann * 16) / 1000), ret, retlen, &retval);
 	}
 	else if (SameStrA(metadata, "bitdepth")) {
 		// TODO is this correct though as it's been
@@ -1119,7 +1103,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		ret[0] = L'1';
 		ret[1] = L'6';
 		ret[2] = 0;
-		retval = 1;
+		retval = 2;
 	}
 
 	LeaveCriticalSection(&g_info_cs);

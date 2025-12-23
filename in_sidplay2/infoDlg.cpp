@@ -8,7 +8,6 @@ extern CThreadSidPlayer *sidPlayer;
 
 INT_PTR CALLBACK InfoDlgWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	static int ismychange = 0;
 	switch(uMsg)
 	{
 		case WM_INITDIALOG:

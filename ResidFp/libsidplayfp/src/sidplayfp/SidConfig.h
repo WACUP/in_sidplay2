@@ -173,6 +173,12 @@ public:
     sampling_method_t samplingMethod;
 
     /**
+     * Faster low-quality emulation,
+     * available only for reSID.
+     */
+    bool fastSampling;
+
+    /**
      * Compare two config objects.
      *
      * @return true if different
