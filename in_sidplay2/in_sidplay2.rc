@@ -258,7 +258,7 @@ BEGIN
             VALUE "FileDescription", "Input Plug-in"
             VALUE "FileVersion", "2.16.0.22"
             VALUE "InternalName", "in_sidplay2.dll"
-            VALUE "LegalCopyright", "Copyright © 2017-2019 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2025"
+            VALUE "LegalCopyright", "Copyright © 2017-2026 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2026"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
             VALUE "ProductVersion", "2.16.0.22"

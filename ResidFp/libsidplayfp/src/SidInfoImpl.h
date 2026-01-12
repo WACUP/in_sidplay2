@@ -114,7 +114,7 @@ public:
     const char *getBasicDesc() const override { return m_basicDesc.c_str(); }
     const char *getChargenDesc() const override { return m_chargenDesc.c_str(); }
 
-    unsigned int getNumberOfSIDs() const override { return m_sidModels.size(); }
+    unsigned int getNumberOfSIDs() const override { return (unsigned int)m_sidModels.size(); }
     SidTuneInfo::model_t getSidModel(unsigned int i) const override
     {
         return i<m_sidModels.size() ? m_sidModels[i] : SidTuneInfo::model_t::SIDMODEL_UNKNOWN;
