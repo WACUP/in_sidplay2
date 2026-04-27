@@ -238,8 +238,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,16,0,22
- PRODUCTVERSION 2,16,0,22
+ FILEVERSION 2,16,0,24
+ PRODUCTVERSION 2,16,0,24
  FILEFLAGSMASK 0x17L
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -256,12 +256,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "WACUP"
             VALUE "FileDescription", "Input Plug-in"
-            VALUE "FileVersion", "2.16.0.22"
+            VALUE "FileVersion", "2.16.0.24"
             VALUE "InternalName", "in_sidplay2.dll"
             VALUE "LegalCopyright", "Copyright © 2017-2026 Zbigniew Ross (GPL v2), WACUP modifications by Darren Owen aka DrO © 2018-2026"
             VALUE "OriginalFilename", "in_sidplay2.dll"
             VALUE "ProductName", "SID (Commodore 64 Music) Decoder"
-            VALUE "ProductVersion", "2.16.0.22"
+            VALUE "ProductVersion", "2.16.0.24"
         END
     END
     BLOCK "VarFileInfo"
@@ -284,7 +284,7 @@ END
 STRINGTABLE
 BEGIN
     IDS_PLUGIN_NAME         "SID Player"
-    IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by Darren Owen aka DrO\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music &\nmakes use of libsidplayfp (v%s) &\nreSID-fp for its playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
+    IDS_ABOUT_STRING        "%s v%s\n\nCopyright © 2017-2019 Zbigniew Ross under GPL v2\n(see https://github.com/zbych-r/in_sidplay2)\n\nWACUP integration updates by %s\n(see https://github.com/WACUP/in_sidplay2)\n\nBuild date: %s\n\nThis adds support for SID (Commodore 64) music &\nmakes use of libsidplayfp (v%s) &\nreSID-fp for its playback.\n\nThanks to:\n   Simon White\tlibsidplay2 engine\n   Dag Lem\treSID library\n   Antti Lankila\treSID-fp\n   Leandro Nini\tlibsidplayfp"
     IDS_SID                 "SID"
 END
 

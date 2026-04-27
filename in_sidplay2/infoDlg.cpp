@@ -1,7 +1,7 @@
 #include <windows.h>
-#include "infodlg.h"
+#include "infoDlg.h"
 #include "resource.h"
-#include "threadsidplayer.h"
+#include "ThreadSidPlayer.h"
 #include <loader/loader/utils.h>
 
 extern CThreadSidPlayer *sidPlayer;

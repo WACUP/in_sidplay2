@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.16.0.22"
+#define PLUGIN_VERSION L"2.16.0.24"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.16.0 - 23 Dec 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -6,11 +6,11 @@
 
 #include <windows.h>
 #include <sdk/winamp/in2.h>
-#include "ThreadSidplayer.h"
+#include "ThreadSidPlayer.h"
 #include "ThreadSidDecoder.h"
 #include "resource.h"
-#include "configdlg.h"
-#include "infodlg.h"
+#include "configDlg.h"
+#include "infoDlg.h"
 //#include "subsongdlg.h"
 #include <sdk/winamp/wa_ipc.h>
 #include <sdk/winamp/ipc_pe.h>
@@ -39,7 +39,7 @@ SETUP_API_LNG_VARS;
 
 static prefsDlgRecW* preferences;
 
-In_Module plugin;
+extern In_Module plugin;
 std::string g_strFilename;
 SidTune* g_tune_info = NULL;
 const SidTuneInfo* g_tuneInfo = NULL;
@@ -71,7 +71,7 @@ void about(HWND hwndParent)
 	wchar_t message[1024]/* = { 0 }*/, title[256]/* = { 0 }*/;
 	PrintfCch(message, ARRAYSIZE(message), LangString(IDS_ABOUT_STRING),
 			  LngStringCopy(IDS_PLUGIN_NAME, title, ARRAYSIZE(title)),
-			  PLUGIN_VERSION, TEXT(__DATE__), PLUGIN_LIBRARY_BUILD_DATE);
+			  PLUGIN_VERSION, WACUP_Author(), TEXT(__DATE__), PLUGIN_LIBRARY_BUILD_DATE);
 	AboutMessageBox(hwndParent, message, title);
 }
 
@@ -113,7 +113,7 @@ int init(void)
 			 IDS_PLUGIN_NAME, PLUGIN_VERSION, &plugin.description);*/
 
 	InputAddPrefsPage(&preferences, plugin.hDllInstance, IDD_CONFIG_DLG,
-					  ConfigDlgWndProc, LngStringDup(IDS_SID), 98, TRUE);
+			  (void*)ConfigDlgWndProc, LngStringDup(IDS_SID), 98, TRUE);
 
 	InitializeCriticalSectionEx(&g_sidPlayer_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
 	InitializeCriticalSectionEx(&g_info_cs, 400, CRITICAL_SECTION_NO_DEBUG_INFO);
@@ -392,12 +392,12 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	std::string strFilename;
 	int length;
 	SidTune tune(0);
-	int foundindex = -1;
+	//int foundindex = -1;
 	int subsongIndex = 1;
 	/*int plLength;
 	wchar_t *plfilename;
 	wchar_t* foundChar;*/
-	bool firstSong = true;
+	//bool firstSong = true;
 
 	create_sid_player(false);
 
@@ -432,17 +432,15 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	}
 	else
 	{
-		subsongIndex = 1;
 		strFilename.reserve(MAX_PATH);
 		ConvertUnicodeFn(&strFilename[0], MAX_PATH, filename, CP_ACP);
 
 		if(strFilename[0] == '{') 
 		{
-			firstSong = false;
+			//firstSong = false;
 
 			//assume char '{' will never occur in name unless its our subsong sign
 			const char* str = strchr(strFilename.c_str(), '}');
-			subsongIndex = AStr2I((strFilename.c_str() + 1));
 
 			//get info from other file if we got real name
 			tune.load((str ? (++str) : strFilename.c_str()));
@@ -656,7 +654,7 @@ DWORD WINAPI AddSubsongsThreadProc(void* params)
 								   INPUT_HAS_FORMAT_CONVERSION_UNICODE | \
 								   INPUT_HAS_FORMAT_CONVERSION_SET_TIME_MODE
 
-extern In_Module plugin = 
+In_Module plugin = 
 {
 	IN_VER_WACUP,	// defined in IN2.H
 	IN_INIT_PRE_FEATURES
@@ -851,7 +849,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 #endif
 
 	char strFilename[MAX_PATH];
-	subsongIndex = 1;
 	ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), filename, CP_ACP);
 
 	if (strFilename[0] == '{') 
@@ -935,10 +932,13 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	}
 
 	//tune.selectSong(info.startSong);
-	g_tune_info->selectSong(subsongIndex);
-	length = sidPlayer->GetSongLengthMs(*g_tune_info);
+	if (g_tune_info != NULL)
+	{
+		g_tune_info->selectSong(subsongIndex);
+		length = sidPlayer->GetSongLengthMs(*g_tune_info);
+	}
 
-	if (length < 0)
+	if ((g_tuneInfo == NULL) || (length < 0))
 	{
 		LeaveCriticalSection(&g_info_cs);
 		return 0;

@@ -24,7 +24,6 @@
 
 #include <cstring>
 #include <climits>
-#include <iostream>
 #include <iomanip>
 #include <algorithm>
 #include <iterator>

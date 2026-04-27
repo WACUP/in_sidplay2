@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "resource.h"
 #include "typesdefs.h"
-#include "subsongdlg.h"
+#include "subSongDlg.h"
 
 CSubSongDlg *subSongDlg;
 

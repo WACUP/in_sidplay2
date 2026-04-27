@@ -153,7 +153,6 @@ DWORD WINAPI CThreadSidDecoder::Run(void* thisparam)
 	int decodedLen;
 	int numChn;
 	int bps;
-	int dspDataLen = 0;
 	int freq;
 	CThreadSidDecoder *playerObj = static_cast<CThreadSidDecoder*>(thisparam);
 
