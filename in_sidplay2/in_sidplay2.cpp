@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.16.0.24"
+#define PLUGIN_VERSION L"2.16.0.25"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.16.0 - 23 Dec 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -16,6 +16,7 @@
 #include <sdk/winamp/ipc_pe.h>
 #define SKIP_INT_DEFINES
 #include <sdk/Agave/Language/api_language.h>
+#include <loader/hook/lock.h>
 #include <loader/loader/paths.h>
 #include <loader/loader/utils.h>
 #include <loader/loader/runtime_helper.h>
@@ -27,7 +28,6 @@
 #include <io.h>
 #include <string>
 #include <vector>
-#include <strsafe.h>
 
 // TODO
 // {5DF925A4-2095-460a-9394-155378C9D18B}
@@ -81,7 +81,7 @@ const bool create_sid_player(const bool skip_if_not_already_created)
 
 	if (!closing && (plugin.hMainWindow != NULL))
 	{
-		EnterCriticalSection(&g_sidPlayer_cs);
+		const LockGuard lock(g_sidPlayer_cs);
 
 		if ((sidPlayer == NULL) && !skip_if_not_already_created)
 		{
@@ -94,8 +94,6 @@ const bool create_sid_player(const bool skip_if_not_already_created)
 		}
 
 		has_player = (sidPlayer != NULL);
-
-		LeaveCriticalSection(&g_sidPlayer_cs);
 	}
 
 	return has_player;
@@ -130,7 +128,7 @@ void quit(void) {
 
 	closing = true;
 
-	EnterCriticalSection(&g_sidPlayer_cs);
+	const LockGuard lock(g_sidPlayer_cs);
 
 	if (sidPlayer != NULL)
 	{
@@ -146,11 +144,6 @@ void quit(void) {
 		}
 		sidPlayer = NULL;
 	}
-
-	LeaveCriticalSection(&g_sidPlayer_cs);
-
-	/*DeleteCriticalSection(&g_sidPlayer_cs);
-	DeleteCriticalSection(&g_info_cs);*/
 }
 
 /*int isourfile(const in_char *fn) { 
@@ -811,7 +804,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		return 0;
 	}
 
-	EnterCriticalSection(&g_info_cs);
+	const LockGuard lock(g_info_cs);
 
 	int length = -1, subsongIndex = 1;
 	//bool firstSong = true;
@@ -869,7 +862,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		if (reset)
 		{
-			LeaveCriticalSection(&g_info_cs);
 			return 0;
 		}
 
@@ -888,7 +880,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		if (g_tuneInfo == NULL)
 		{
-			LeaveCriticalSection(&g_info_cs);
 			return 0;
 		}
 	}
@@ -907,7 +898,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		if (reset)
 		{
-			LeaveCriticalSection(&g_info_cs);
 			return 0;
 		}
 
@@ -924,7 +914,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 		if (g_tuneInfo == NULL)
 		{
-			LeaveCriticalSection(&g_info_cs);
 			return 0;
 		}
 
@@ -940,7 +929,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 	if ((g_tuneInfo == NULL) || (length < 0))
 	{
-		LeaveCriticalSection(&g_info_cs);
 		return 0;
 	}
 
@@ -948,7 +936,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 	//if (info.c64dataLen == 0) return;
 	if (!g_tuneInfo || !g_tuneInfo->c64dataLen())
 	{
-		LeaveCriticalSection(&g_info_cs);
 		return 0;
 	}
 
@@ -972,7 +959,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->TITLE.empty())
 			{
 				retval = (int)PrintfCch(ret, retlen, L"%S", sb->TITLE.c_str());
-				LeaveCriticalSection(&g_info_cs);
 				return retval;
 			}
 		}
@@ -987,7 +973,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->ARTIST.empty())
 			{
 				retval = (int)PrintfCch(ret, retlen, L"%S", sb->ARTIST.c_str());
-				LeaveCriticalSection(&g_info_cs);
 				return retval;
 			}
 		}
@@ -1002,7 +987,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->NAME.empty())
 			{
 				retval = (int)PrintfCch(ret, retlen, L"%S", sb->NAME.c_str());
-				LeaveCriticalSection(&g_info_cs);
 				return retval;
 			}
 		}
@@ -1015,7 +999,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 			if (!sb->COMMENT.empty())
 			{
 				retval = (int)PrintfCch(ret, retlen, L"%S", sb->COMMENT.c_str());
-				LeaveCriticalSection(&g_info_cs);
 				return retval;
 			}
 		}
@@ -1029,9 +1012,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		{
 			if (!sb->AUTHOR.empty())
 			{
-				retval = (int)PrintfCch(ret, retlen, L"%S", sb->AUTHOR.c_str());
-				LeaveCriticalSection(&g_info_cs);
-				return retval;
+				return (int)PrintfCch(ret, retlen, L"%S", sb->AUTHOR.c_str());
 			}
 		}
 
@@ -1106,7 +1087,6 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 		retval = 2;
 	}
 
-	LeaveCriticalSection(&g_info_cs);
 	return retval;
 }
 
