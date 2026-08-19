@@ -496,55 +496,55 @@ void getfileinfo(const in_char *filename, in_char *title, int *length_in_ms)
 	*/
 	//info->dataFileName
 
-	std::string fileNameOnly(strFilename);
-	const size_t cutStart = fileNameOnly.find_last_of("\\"),
-				 cutEnd = fileNameOnly.find_last_of(".");
-	fileNameOnly = fileNameOnly.substr(cutStart + 1, cutEnd - cutStart-1);
-
-
-	//std::string titleTemplate("%f / %a / %x %sn");
-	std::string titleTemplate("%t %x / %a / %r / %sn");
-	std::string subsongTemplate("%n");
-
-
-	//fill STIL data if necessary
-	const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
-	conditionsReplace(titleTemplate, sb, tuneInfo);
-
-	replaceAll(titleTemplate, "%f", fileNameOnly.c_str());
-	replaceAll(titleTemplate, "%t", tuneInfo->infoString(0));
-	replaceAll(titleTemplate, "%a", tuneInfo->infoString(1));
-	replaceAll(titleTemplate, "%r", tuneInfo->infoString(2));
-	if (tuneInfo->songs() > 1)
-	{
-		char buf[20] = {0};
-		PrintfCchA(buf,20,"%02d", subsongIndex);
-		replaceAll(subsongTemplate, "%n", buf);
-		replaceAll(titleTemplate, "%x", subsongTemplate.c_str());
-	}
-	else
-	{
-		replaceAll(titleTemplate, "%x", "");
-	}
-
-	//fill STIL data if necessary
-	if (sb == NULL)
-	{
-		replaceAll(titleTemplate, "%sr", "");
-		replaceAll(titleTemplate, "%sa", "");
-		replaceAll(titleTemplate, "%st", "");
-		replaceAll(titleTemplate, "%sn", "");
-	}
-	else
-	{			
-		replaceAll(titleTemplate, "%sr", sb->ARTIST.c_str());
-		replaceAll(titleTemplate, "%st", sb->TITLE.c_str());
-		replaceAll(titleTemplate, "%sa", sb->AUTHOR.c_str());
-		replaceAll(titleTemplate, "%sn", sb->NAME.c_str());
-	}
-
 	if (title != NULL)
 	{
+		std::string fileNameOnly(strFilename);
+		const size_t cutStart = fileNameOnly.find_last_of("\\"),
+					 cutEnd = fileNameOnly.find_last_of(".");
+		fileNameOnly = fileNameOnly.substr(cutStart + 1, cutEnd - cutStart-1);
+
+
+		//std::string titleTemplate("%f / %a / %x %sn");
+		std::string titleTemplate("%t %x / %a / %r / %sn");
+		std::string subsongTemplate("%n");
+
+
+		//fill STIL data if necessary
+		const StilBlock* sb = getStilBlock(strFilename, subsongIndex);
+		conditionsReplace(titleTemplate, sb, tuneInfo);
+
+		replaceAll(titleTemplate, "%f", fileNameOnly.c_str());
+		replaceAll(titleTemplate, "%t", tuneInfo->infoString(0));
+		replaceAll(titleTemplate, "%a", tuneInfo->infoString(1));
+		replaceAll(titleTemplate, "%r", tuneInfo->infoString(2));
+		if (tuneInfo->songs() > 1)
+		{
+			char buf[20] = {0};
+			PrintfCchA(buf,20,"%02d", subsongIndex);
+			replaceAll(subsongTemplate, "%n", buf);
+			replaceAll(titleTemplate, "%x", subsongTemplate.c_str());
+		}
+		else
+		{
+			replaceAll(titleTemplate, "%x", "");
+		}
+
+		//fill STIL data if necessary
+		if (sb == NULL)
+		{
+			replaceAll(titleTemplate, "%sr", "");
+			replaceAll(titleTemplate, "%sa", "");
+			replaceAll(titleTemplate, "%st", "");
+			replaceAll(titleTemplate, "%sn", "");
+		}
+		else
+		{			
+			replaceAll(titleTemplate, "%sr", sb->ARTIST.c_str());
+			replaceAll(titleTemplate, "%st", sb->TITLE.c_str());
+			replaceAll(titleTemplate, "%sa", sb->AUTHOR.c_str());
+			replaceAll(titleTemplate, "%sn", sb->NAME.c_str());
+		}
+
 		ConvertANSI(titleTemplate.c_str(), (const int)titleTemplate.size(),
 									  CP_ACP, title, FILETITLE_SIZE, NULL);
 	}
