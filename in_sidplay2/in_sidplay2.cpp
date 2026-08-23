@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.16.0.25"
+#define PLUGIN_VERSION L"2.16.0.26"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.16.0 - 23 Dec 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -181,6 +181,7 @@ int play(const in_char *filename)
 	return 0; 
 }
 
+#ifndef _WIN64
 // standard pause implementation
 void pause(void)
 {
@@ -197,6 +198,22 @@ void unpause(void)
 		sidPlayer->Play();
 	}
 }
+#else
+void setpause(const int paused)
+{
+	if (sidPlayer != NULL)
+	{
+		if (paused)
+		{
+			sidPlayer->Pause();
+		}
+		else
+		{
+			sidPlayer->Play();
+		}
+	}
+}
+#endif
 
 int ispaused(void)
 { 
@@ -665,8 +682,12 @@ In_Module plugin =
 	0/*infoDlg*/,
 	0/*isourfile*/,
 	play,
+#ifndef _WIN64
 	pause,
 	unpause,
+#else
+	setpause,
+#endif
 	ispaused,
 	stop,
 	
