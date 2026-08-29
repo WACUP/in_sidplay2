@@ -151,13 +151,24 @@ void quit(void) {
 }*/
 
 // called when winamp wants to play a file
-int play(const in_char *filename) 
+#ifndef _WIN64
+int play(const in_char *filename)
+#else
+int play(const in_char* filename, const int seek_offset)
+#endif
 {
-	if(!create_sid_player(false))
+	if (!create_sid_player(false))
 	{
 		//error we cannot recover from
 		return 1;
 	}
+
+#ifdef _WIN64
+	if (seek_offset != -1)
+	{
+		plugin.SetOutputTime(seek_offset);
+}
+#endif
 
 	char strFilename[MAX_PATH];
 	ConvertUnicodeFn(strFilename, ARRAYSIZE(strFilename), filename, CP_ACP);
