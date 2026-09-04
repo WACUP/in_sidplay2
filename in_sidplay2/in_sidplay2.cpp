@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.16.0.26"
+#define PLUGIN_VERSION L"2.16.0.27"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.16.0 - 23 Dec 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.
@@ -1125,7 +1125,7 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 /* *********************************** */
 /* placeholder for conversion api support */
 
-extern "C" __declspec(dllexport) intptr_t winampGetExtendedRead_openW(const wchar_t *fn, int *size, int *bps, int *nch, int *srate)
+extern "C" __declspec(dllexport) intptr_t winampGetExtendedRead_openW(const wchar_t *fn, size_t *size, int *bps, int *nch, int *srate)
 {
 #if 0
 	CThreadSidDecoder *sidDecoder = new CThreadSidDecoder();
@@ -1168,7 +1168,7 @@ extern "C" __declspec(dllexport) intptr_t winampGetExtendedRead_openW(const wcha
 		}
 		if (size)
 		{
-			*size = -1/*sidDecoder->GetSongLength() * (*bps / 8) * (*nch)*/;
+			*size = (size_t)-1/*sidDecoder->GetSongLength() * (*bps / 8) * (*nch)*/;
 		}
 
 		// TODO
