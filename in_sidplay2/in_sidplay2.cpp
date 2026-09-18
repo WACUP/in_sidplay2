@@ -262,7 +262,7 @@ int getoutputtime(void)
 // usually we use it to set seek_needed to the seek
 // point (seek_needed is -1 when no seek is needed)
 // and the decode thread checks seek_needed.
-void setoutputtime(int time_in_ms) 
+void setoutputtime(const int time_in_ms)
 { 
 	if (sidPlayer != NULL)
 	{
@@ -272,8 +272,8 @@ void setoutputtime(int time_in_ms)
 }
 
 // standard volume/pan functions
-void setvolume(int volume) { if (plugin.outMod && plugin.outMod->SetVolume) plugin.outMod->SetVolume(volume); }
-void setpan(int pan) { if (plugin.outMod && plugin.outMod->SetPan) plugin.outMod->SetPan(pan); }
+void setvolume(const int volume) { if (plugin.outMod && plugin.outMod->SetVolume) plugin.outMod->SetVolume(volume); }
+void setpan(const int pan) { if (plugin.outMod && plugin.outMod->SetPan) plugin.outMod->SetPan(pan); }
 
 // this gets called when the use hits Alt+3 to get the file info.
 // if you need more info, ask me :)
@@ -973,8 +973,9 @@ extern "C" __declspec (dllexport) int winampGetExtendedFileInfoW(wchar_t *filena
 
 	int retval = 0;
 	// even if no file, return a 1 and write "0"
-	const bool length_seconds = SameStrA(metadata, "length_seconds");
-	if (length_seconds || SameStrA(metadata, "length"))
+	const bool is_length = SameStrNA(metadata, "length", 6),
+			   length_seconds = (is_length ? SameStrA((metadata + 6), "_seconds") : false);
+	if (is_length || length_seconds)
 	{
 		if (length <= 0)
 		{
