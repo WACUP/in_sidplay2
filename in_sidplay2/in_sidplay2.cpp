@@ -1,4 +1,4 @@
-#define PLUGIN_VERSION L"2.16.0.27"
+#define PLUGIN_VERSION L"2.16.0.28"
 #define PLUGIN_LIBRARY_BUILD_DATE L"2.16.0 - 23 Dec 2025"
 
 // in_sidplay2.cpp : Defines the exported functions for the DLL application.

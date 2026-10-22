@@ -104,10 +104,8 @@ void CThreadSidPlayer::Play(void)
 		m_engine->config(m_playerConfig.sidConfig);
 		m_playerConfig.sidConfig.playback = playback;
 
-		maxLatency = (m_inmod->outMod && m_inmod->outMod->Open &&
-					  m_playerConfig.sidConfig.frequency && numChann ?
-					  m_inmod->outMod->Open(m_playerConfig.sidConfig.frequency,
-					  numChann, PLAYBACK_BIT_PRECISION, -1, -1) : -1);
+		maxLatency = OpenOutputPlugin(m_inmod, m_playerConfig.sidConfig.frequency,
+												numChann, PLAYBACK_BIT_PRECISION);
 		if (maxLatency < 0)
 		{
 			return;
