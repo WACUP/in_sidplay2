@@ -77,6 +77,16 @@ void CThreadSidPlayer::Init(void)
 	SetConfig(&m_playerConfig);
 }
 
+int CThreadSidPlayer::StorePlaybackThread(HANDLE thread, LPVOID parameter)
+{
+	if (parameter != nullptr)
+	{
+		reinterpret_cast<CThreadSidPlayer*>(parameter)->m_threadHandle = thread;
+		return 1;
+	}
+	return 0;
+}
+
 void CThreadSidPlayer::Play(void)
 {
 	if(m_playerStatus == SP_RUNNING) return;
@@ -125,7 +135,7 @@ void CThreadSidPlayer::Play(void)
 		//default volume
 		m_inmod->outMod->SetVolume(-666); 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = StartPlaybackThread(CThreadSidPlayer::Run, this, 0, NULL);
+		m_threadHandle = StartPlaybackThread(CThreadSidPlayer::Run, this, 0, StorePlaybackThread);
 	}
 }
 

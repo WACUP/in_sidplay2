@@ -91,4 +91,6 @@ public:
 	void SeekTo(int timeMs);
 	const char* GetSTILData(const char* filePath);
 	const StilBlock* GetSTILData2(const char* filePath, int subsong);
+
+	static int StorePlaybackThread(HANDLE thread, LPVOID parameter);
 };
