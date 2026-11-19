@@ -135,7 +135,7 @@ void CThreadSidPlayer::Play(void)
 		//default volume
 		m_inmod->outMod->SetVolume(-666); 
 		m_playerStatus = SP_RUNNING;
-		m_threadHandle = StartPlaybackThread(CThreadSidPlayer::Run, this, 0, StorePlaybackThread);
+		StartPlaybackThread(CThreadSidPlayer::Run, this, 0, StorePlaybackThread);
 	}
 }
 
